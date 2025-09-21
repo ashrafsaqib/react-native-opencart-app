@@ -52,7 +52,7 @@ A modern, high-performance mobile e-commerce application built with React Native
   - React Native Vector Icons
   - Context API for state management
 
-- **Backend Integration**:
+- **Backend Integration**:  ( coming soon )
   - OpenCart REST API
   - Secure authentication
   - Real-time data synchronization
@@ -62,13 +62,13 @@ A modern, high-performance mobile e-commerce application built with React Native
 
 This project demonstrates advanced OpenCart integration capabilities:
 
-### 🔌 API Integration
+### 🔌 API Integration ( coming soon )
 - Custom API endpoints utilization
 - Efficient data fetching and caching
 - Real-time inventory synchronization
 - Secure authentication implementation
 
-### 🛠️ Extended Features
+### 🛠️ Extended Features  ( coming soon )
 - Enhanced product filtering
 - Advanced search capabilities
 - Custom order processing
@@ -132,7 +132,7 @@ Contributions are welcome! Feel free to submit issues and enhancement requests.
 
 ## � Contact
 
-Saqib Ashraf - [LinkedIn](https://linkedin.com/in/YourProfile)
+Saqib Ashraf - [LinkedIn](https://linkedin.com/in/ashrafsaqib) - [GitHub](https://github.com/ashrafsaqib)
 
 Project Link: [https://github.com/ashrafsaqib/react-native-opencart-app](https://github.com/ashrafsaqib/react-native-opencart-app)
 
