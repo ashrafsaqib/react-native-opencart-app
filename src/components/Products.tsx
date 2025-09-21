@@ -16,21 +16,21 @@ const products: Product[] = [
     name: 'Original Stripe Polo Ralph Lauren - Slim Fit',
     price: '$89',
     sizes: ['S', 'M', 'L', 'XL'],
-    image: 'https://via.placeholder.com/150',
+    image: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=500&h=500',
   },
   {
     id: '2',
     name: 'Training Dri-FIT 2.0 - t-shirt in black',
     price: '$39',
     sizes: ['S', 'M', 'L', 'XL'],
-    image: 'https://via.placeholder.com/150',
+    image: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=500&h=500',
   },
   {
     id: '3',
     name: 'Diesel S-KB ASTICO low lace sneakers',
     price: '$99',
     sizes: ['8.5 US', '9 US', '10 US'],
-    image: 'https://via.placeholder.com/150',
+    image: 'https://images.unsplash.com/photo-1560769629-975ec94e6a86?auto=format&fit=crop&w=500&h=500',
   },
 ];
 
