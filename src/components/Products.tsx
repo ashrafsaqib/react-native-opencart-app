@@ -1,53 +1,77 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
-const products = [
+interface Product {
+  id: string;
+  name: string;
+  price: string;
+  sizes: string[];
+  image: string;
+}
+
+const products: Product[] = [
   {
     id: '1',
-    name: 'iPhone 13',
-    price: '$999',
+    name: 'Original Stripe Polo Ralph Lauren - Slim Fit',
+    price: '$89',
+    sizes: ['S', 'M', 'L', 'XL'],
     image: 'https://via.placeholder.com/150',
   },
   {
     id: '2',
-    name: 'Samsung Galaxy S22',
-    price: '$899',
+    name: 'Training Dri-FIT 2.0 - t-shirt in black',
+    price: '$39',
+    sizes: ['S', 'M', 'L', 'XL'],
     image: 'https://via.placeholder.com/150',
   },
   {
     id: '3',
-    name: 'Google Pixel 6',
-    price: '$799',
-    image: 'https://via.placeholder.com/150',
-  },
-  {
-    id: '4',
-    name: 'OnePlus 10 Pro',
-    price: '$899',
+    name: 'Diesel S-KB ASTICO low lace sneakers',
+    price: '$99',
+    sizes: ['8.5 US', '9 US', '10 US'],
     image: 'https://via.placeholder.com/150',
   },
 ];
 
 const Products = () => {
-  const renderProduct = ({ item }) => (
+  const renderProduct = ({ item }: { item: Product }) => (
     <View style={styles.product}>
       <Image source={{ uri: item.image }} style={styles.productImage} />
-      <Text style={styles.productName}>{item.name}</Text>
-      <Text style={styles.productPrice}>{item.price}</Text>
-      <TouchableOpacity style={styles.addToCartButton}>
-        <Text style={styles.addToCartButtonText}>Add to Cart</Text>
-      </TouchableOpacity>
+      <View style={styles.productDetails}>
+        <Text style={styles.productName}>{item.name}</Text>
+        <View style={styles.sizeContainer}>
+          {item.sizes.map((size, index) => (
+            <Text key={index} style={styles.size}>{size}</Text>
+          ))}
+        </View>
+        <View style={styles.priceContainer}>
+          <Text style={styles.price}>{item.price}</Text>
+          <TouchableOpacity style={styles.cartButton}>
+            <Ionicons name="cart-outline" size={20} color="#FF6B3E" />
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
   );
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Featured Products</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Popular</Text>
+        <View style={styles.sortContainer}>
+          <Text style={styles.sortLabel}>Newest</Text>
+          <View style={styles.divider} />
+          <Text style={styles.sortLabel}>Highest</Text>
+          <View style={styles.divider} />
+          <Text style={styles.sortLabel}>Lowest</Text>
+        </View>
+      </View>
       <FlatList
         data={products}
         renderItem={renderProduct}
         keyExtractor={(item) => item.id}
-        numColumns={2}
+        showsVerticalScrollIndicator={false}
       />
     </View>
   );
@@ -55,43 +79,78 @@ const Products = () => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 10,
+    flex: 1,
+    padding: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   title: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 10,
+    color: '#333',
   },
-  product: {
-    flex: 1,
-    margin: 5,
-    padding: 10,
-    backgroundColor: '#fff',
-    borderRadius: 10,
+  sortContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
+  sortLabel: {
+    fontSize: 14,
+    color: '#666',
+  },
+  divider: {
+    width: 1,
+    height: 12,
+    backgroundColor: '#DDD',
+    marginHorizontal: 8,
+  },
+  product: {
+    marginBottom: 24,
+  },
   productImage: {
-    width: 150,
-    height: 150,
-    marginBottom: 10,
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  productDetails: {
+    paddingHorizontal: 4,
   },
   productName: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+    marginBottom: 8,
+  },
+  sizeContainer: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  size: {
+    fontSize: 14,
+    color: '#666',
+    marginRight: 12,
+  },
+  priceContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  price: {
+    fontSize: 18,
     fontWeight: 'bold',
+    color: '#FF6B3E',
   },
-  productPrice: {
-    marginTop: 5,
-    color: 'green',
-  },
-  addToCartButton: {
-    marginTop: 10,
-    backgroundColor: 'blue',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-  },
-  addToCartButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+  cartButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFF0EC',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

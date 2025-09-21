@@ -1,52 +1,71 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 
 const categories = [
-  { id: '1', name: 'Electronics', icon: 'phone-portrait' },
-  { id: '2', name: 'Clothing', icon: 'shirt' },
-  { id: '3', name: 'Books', icon: 'book' },
-  { id: '4', name: 'Home', icon: 'home' },
-  { id: '5', name: 'Sports', icon: 'basketball' },
+  { id: '1', name: 'Coats' },
+  { id: '2', name: 'Popular' },
+  { id: '3', name: 'New In' },
+  { id: '4', name: 'Jackets' },
 ];
 
 const Categories = () => {
-  const renderCategory = ({ item }) => (
-    <TouchableOpacity style={styles.category}>
-      <Ionicons name={item.icon} size={30} color="#000" />
-      <Text style={styles.categoryName}>{item.name}</Text>
-    </TouchableOpacity>
-  );
+  const [selectedCategory, setSelectedCategory] = useState('1');
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Categories</Text>
-      <FlatList
-        data={categories}
-        renderItem={renderCategory}
-        keyExtractor={(item) => item.id}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-      />
-    </View>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+    >
+      {categories.map((category) => (
+        <TouchableOpacity
+          key={category.id}
+          style={[
+            styles.category,
+            selectedCategory === category.id && styles.selectedCategory,
+          ]}
+          onPress={() => setSelectedCategory(category.id)}
+        >
+          <Text
+            style={[
+              styles.categoryName,
+              selectedCategory === category.id && styles.selectedCategoryName,
+            ]}
+          >
+            {category.name}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: 10,
+    marginTop: 16,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
+  contentContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
   },
   category: {
-    alignItems: 'center',
-    marginRight: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    marginRight: 12,
+    borderRadius: 20,
+    backgroundColor: '#F5F5F5',
+  },
+  selectedCategory: {
+    backgroundColor: '#FF6B3E',
   },
   categoryName: {
-    marginTop: 5,
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#666',
+  },
+  selectedCategoryName: {
+    color: '#FFF',
   },
 });
 
