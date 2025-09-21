@@ -3,13 +3,14 @@ import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from 'react
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import WishlistButton from './WishlistButton';
 
 type RootStackParamList = {
-  Home: undefined;
-  Product: undefined;
+  MainTabs: undefined;
+  Product: { product: Product };
 };
 
-type ProductsNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
+type ProductsNavigationProp = NativeStackNavigationProp<RootStackParamList, 'MainTabs'>;
 
 interface Product {
   id: string;
@@ -47,9 +48,9 @@ const Products = () => {
   const navigation = useNavigation<ProductsNavigationProp>();
 
   const renderProduct = ({ item }: { item: Product }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.product}
-      onPress={() => navigation.navigate('Product')}
+      onPress={() => navigation.navigate('Product', { product: item })}
     >
       <Image source={{ uri: item.image }} style={styles.productImage} />
       <View style={styles.productDetails}>
@@ -59,17 +60,29 @@ const Products = () => {
             <Text key={index} style={styles.size}>{size}</Text>
           ))}
         </View>
-        <View style={styles.priceContainer}>
+        <View style={styles.actionsContainer}>
           <Text style={styles.price}>{item.price}</Text>
-          <TouchableOpacity 
-            style={styles.cartButton}
-            onPress={(e) => {
-              e.stopPropagation();
-              // Add to cart logic here
-            }}
-          >
-            <Ionicons name="cart-outline" size={20} color="#FF6B3E" />
-          </TouchableOpacity>
+          <View style={styles.buttonGroup}>
+            <WishlistButton
+              product={{
+                id: item.id,
+                name: item.name,
+                price: parseFloat(item.price.replace('$', '')),
+                image: item.image
+              }}
+              size={20}
+              style={styles.wishlistButton}
+            />
+            <TouchableOpacity 
+              style={styles.cartButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                // Add to cart logic here
+              }}
+            >
+              <Ionicons name="cart-outline" size={20} color="#FF6B3E" />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -154,10 +167,17 @@ const styles = StyleSheet.create({
     color: '#666',
     marginRight: 12,
   },
-  priceContainer: {
+  actionsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  buttonGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  wishlistButton: {
+    marginRight: 8,
   },
   price: {
     fontSize: 18,

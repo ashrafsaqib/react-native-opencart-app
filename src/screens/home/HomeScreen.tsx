@@ -4,7 +4,6 @@ import Header from '../../components/Header';
 import Banner from '../../components/Banner';
 import Categories from '../../components/Categories';
 import Products from '../../components/Products';
-import BottomNavigation from '../../components/BottomNavigation';
 
 const HomeScreen = () => {
   return (
@@ -15,7 +14,6 @@ const HomeScreen = () => {
         <Categories />
         <Products />
       </ScrollView>
-      <BottomNavigation />
     </View>
   );
 };
