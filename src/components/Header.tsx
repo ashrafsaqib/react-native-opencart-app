@@ -5,6 +5,9 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 const Header = () => {
   return (
     <View style={styles.container}>
+      <TouchableOpacity style={styles.logoContainer}>
+        <Ionicons name="play" size={28} color="#FF6B3E"/>
+      </TouchableOpacity>
       <View style={styles.searchSection}>
         <Ionicons style={styles.searchIcon} name="search" size={20} color="#999"/>
         <TextInput
@@ -17,14 +20,9 @@ const Header = () => {
           <Ionicons name="options-outline" size={20} color="#999"/>
         </TouchableOpacity>
       </View>
-      <View style={styles.rightIcons}>
-        <TouchableOpacity style={styles.iconButton}>
-          <Ionicons name="notifications-outline" size={24} color="#000"/>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton}>
-          <Ionicons name="person-outline" size={24} color="#000"/>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity style={styles.iconButton}>
+        <Ionicons name="notifications-outline" size={24} color="#000"/>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -37,6 +35,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: '#fff',
+  },
+  logoContainer: {
+    marginRight: 12,
   },
   searchSection: {
     flex: 1,

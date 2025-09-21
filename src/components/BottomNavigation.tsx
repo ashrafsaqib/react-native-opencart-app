@@ -1,33 +1,44 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const tabs = [
-  { id: 'home', icon: 'home-outline', label: 'Home', active: true },
-  { id: 'search', icon: 'search-outline', label: 'Search' },
-  { id: 'wishlist', icon: 'heart-outline', label: 'Wishlist' },
-  { id: 'bag', icon: 'bag-outline', label: 'Bag' },
-  { id: 'profile', icon: 'person-outline', label: 'Profile' },
+  { id: 'Home', icon: 'home-outline', label: 'Home' },
+  { id: 'Category', icon: 'grid-outline', label: 'Categories' },
+  { id: 'Wishlist', icon: 'heart-outline', label: 'Wishlist' },
+  { id: 'Cart', icon: 'bag-outline', label: 'Cart' },
+  { id: 'Profile', icon: 'person-outline', label: 'Profile' },
 ];
 
 const BottomNavigation = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
   return (
     <View style={styles.container}>
-      {tabs.map((tab) => (
-        <TouchableOpacity
-          key={tab.id}
-          style={[styles.tab, tab.active && styles.activeTab]}
-        >
-          <Ionicons
-            name={tab.icon}
-            size={24}
-            color={tab.active ? '#FF6B3E' : '#666'}
-          />
-          <Text style={[styles.label, tab.active && styles.activeLabel]}>
-            {tab.label}
-          </Text>
-        </TouchableOpacity>
-      ))}
+      {tabs.map((tab) => {
+        const isActive = route.name === tab.id;
+        return (
+          <TouchableOpacity
+            key={tab.id}
+            style={[styles.tab, isActive && styles.activeTab]}
+            onPress={() => {
+              if (tab.id !== route.name) {
+                navigation.navigate(tab.id as never);
+              }
+            }}
+          >
+            <Ionicons
+              name={tab.icon}
+              size={24}
+              color={isActive ? '#FF6B3E' : '#666'}
+            />
+            <Text style={[styles.label, isActive && styles.activeLabel]}>
+              {tab.label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 };
