@@ -4,8 +4,14 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import HomeScreen from './src/screens/home/HomeScreen';
+import ProductScreen from './src/screens/product/ProductScreen';
 
-const Stack = createNativeStackNavigator();
+export type RootStackParamList = {
+  Home: undefined;
+  Product: undefined;
+};
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 /* Root stack (Tabs + overlay screens) */
 function RootStack() {
@@ -19,6 +25,10 @@ function RootStack() {
           <Stack.Screen 
             name="Home" 
             component={HomeScreen}
+          />
+          <Stack.Screen 
+            name="Product" 
+            component={ProductScreen}
           />
       </Stack.Navigator>
     </NavigationContainer>

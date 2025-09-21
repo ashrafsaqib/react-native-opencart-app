@@ -1,6 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+
+type RootStackParamList = {
+  Home: undefined;
+  Product: undefined;
+};
+
+type ProductsNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
 interface Product {
   id: string;
@@ -35,8 +44,13 @@ const products: Product[] = [
 ];
 
 const Products = () => {
+  const navigation = useNavigation<ProductsNavigationProp>();
+
   const renderProduct = ({ item }: { item: Product }) => (
-    <View style={styles.product}>
+    <TouchableOpacity 
+      style={styles.product}
+      onPress={() => navigation.navigate('Product')}
+    >
       <Image source={{ uri: item.image }} style={styles.productImage} />
       <View style={styles.productDetails}>
         <Text style={styles.productName}>{item.name}</Text>
@@ -47,12 +61,18 @@ const Products = () => {
         </View>
         <View style={styles.priceContainer}>
           <Text style={styles.price}>{item.price}</Text>
-          <TouchableOpacity style={styles.cartButton}>
+          <TouchableOpacity 
+            style={styles.cartButton}
+            onPress={(e) => {
+              e.stopPropagation();
+              // Add to cart logic here
+            }}
+          >
             <Ionicons name="cart-outline" size={20} color="#FF6B3E" />
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
