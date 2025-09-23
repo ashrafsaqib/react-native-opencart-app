@@ -6,10 +6,12 @@ import {
   Image,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
+  Platform,
+  StatusBar,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type RootStackParamList = {
   Home: undefined;
@@ -27,6 +29,7 @@ interface ProductScreenProps {
 const ProductScreen: React.FC<ProductScreenProps> = ({ navigation }) => {
   const [selectedSize, setSelectedSize] = useState('M');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const insets = useSafeAreaInsets();
 
   const images = [
     'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=800&h=800',
@@ -35,18 +38,25 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ navigation }) => {
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="chevron-back" size={24} color="#000" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Men's Clothes</Text>
-          <TouchableOpacity>
-            <Ionicons name="share-outline" size={24} color="#000" />
-          </TouchableOpacity>
-        </View>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
+      <View style={[styles.contentContainer, { paddingTop: insets.top }]}>
+        <ScrollView>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity 
+              onPress={() => navigation.goBack()}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="chevron-back" size={24} color="#000" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Men's Clothes</Text>
+            <TouchableOpacity
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="share-outline" size={24} color="#000" />
+            </TouchableOpacity>
+          </View>
 
         {/* Product Images */}
         <View style={styles.imageContainer}>
@@ -130,7 +140,7 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ navigation }) => {
       </ScrollView>
 
       {/* Bottom Bar */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom }]}>
         <View style={styles.priceContainer}>
           <Text style={styles.priceLabel}>Total price</Text>
           <Text style={styles.price}>$89.00</Text>
@@ -139,6 +149,7 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ navigation }) => {
           <Ionicons name="bag-outline" size={20} color="#FFF" />
           <Text style={styles.addButtonText}>Add to bag</Text>
         </TouchableOpacity>
+      </View>
       </View>
     </SafeAreaView>
   );
@@ -149,15 +160,23 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFF',
   },
+  contentContainer: {
+    flex: 1,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFF',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
+    flex: 1,
+    textAlign: 'center',
+    marginHorizontal: 16,
   },
   imageContainer: {
     position: 'relative',
@@ -204,6 +223,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 24,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEE',
   },
   stars: {
     flexDirection: 'row',

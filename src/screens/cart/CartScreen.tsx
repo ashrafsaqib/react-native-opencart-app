@@ -7,8 +7,8 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import SafeScreen from '../../components/SafeScreen';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -77,7 +77,7 @@ const CartScreen = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeScreen>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -117,7 +117,7 @@ const CartScreen = () => {
           <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </SafeScreen>
   );
 };
 

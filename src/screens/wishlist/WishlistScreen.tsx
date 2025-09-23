@@ -11,6 +11,7 @@ import {
 import { useWishlist } from '../../context/WishlistContext';
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import SafeScreen from '../../components/SafeScreen';
 
 const WishlistScreen = () => {
   const { wishlist, removeFromWishlist } = useWishlist();
@@ -38,7 +39,7 @@ const WishlistScreen = () => {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeScreen>
       <View style={styles.header}>
         <Text style={styles.title}>My Wishlist</Text>
       </View>
@@ -61,7 +62,7 @@ const WishlistScreen = () => {
           contentContainerStyle={styles.listContainer}
         />
       )}
-    </View>
+    </SafeScreen>
   );
 };
 
