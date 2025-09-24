@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "DriverLipslaycom.app"
-               BlueprintName = "DriverLipslaycom"
-               ReferencedContainer = "container:DriverLipslaycom.xcodeproj">
+               BuildableName = "opencartapp.app"
+               BlueprintName = "opencartapp"
+               ReferencedContainer = "container:opencartapp.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "DriverLipslaycomTests.xctest"
-               BlueprintName = "DriverLipslaycomTests"
-               ReferencedContainer = "container:DriverLipslaycom.xcodeproj">
+               BuildableName = "opencartappTests.xctest"
+               BlueprintName = "opencartappTests"
+               ReferencedContainer = "container:opencartapp.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -55,9 +55,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "DriverLipslaycom.app"
-            BlueprintName = "DriverLipslaycom"
-            ReferencedContainer = "container:DriverLipslaycom.xcodeproj">
+            BuildableName = "opencartapp.app"
+            BlueprintName = "opencartapp"
+            ReferencedContainer = "container:opencartapp.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -72,9 +72,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "DriverLipslaycom.app"
-            BlueprintName = "DriverLipslaycom"
-            ReferencedContainer = "container:DriverLipslaycom.xcodeproj">
+            BuildableName = "opencartapp.app"
+            BlueprintName = "opencartapp"
+            ReferencedContainer = "container:opencartapp.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

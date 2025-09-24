@@ -1,8 +1,16 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { useAuth } from '../../context/AuthContext';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import LoginScreen from '../auth/LoginScreen';
+import RegisterScreen from '../auth/RegisterScreen';
+import ForgotPasswordScreen from '../auth/ForgotPasswordScreen';
 
-const ProfileScreen = () => {
+const Stack = createNativeStackNavigator();
+
+const UserProfileContent = () => {
+  const { logout } = useAuth();
   const menuItems = [
     { icon: 'person-outline', title: 'Edit Profile', action: () => {} },
     { icon: 'location-outline', title: 'Shipping Address', action: () => {} },
@@ -11,7 +19,7 @@ const ProfileScreen = () => {
     { icon: 'notifications-outline', title: 'Notifications', action: () => {} },
     { icon: 'settings-outline', title: 'Settings', action: () => {} },
     { icon: 'help-circle-outline', title: 'Help Center', action: () => {} },
-    { icon: 'log-out-outline', title: 'Logout', action: () => {} },
+    { icon: 'log-out-outline', title: 'Logout', action: logout },
   ];
 
   const renderMenuItem = (item: typeof menuItems[0], index: number) => (
@@ -49,6 +57,22 @@ const ProfileScreen = () => {
       </ScrollView>
     </View>
   );
+};
+
+const ProfileScreen = () => {
+  const { user } = useAuth();
+
+  if (!user) {
+    return (
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      </Stack.Navigator>
+    );
+  }
+
+  return <UserProfileContent />;
 };
 
 const styles = StyleSheet.create({

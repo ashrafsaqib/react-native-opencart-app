@@ -1,4 +1,4 @@
-package com.driverlipslaycom
+package com.opencartapp
 
 import android.app.Application
 import com.facebook.react.PackageList
