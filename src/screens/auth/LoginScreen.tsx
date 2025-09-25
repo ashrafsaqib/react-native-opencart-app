@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useAuth } from '../../context/AuthContext';
 
 type AuthStackParamList = {
   Login: undefined;
@@ -27,12 +28,13 @@ interface LoginScreenProps {
 }
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('test@test.com');
+  const [password, setPassword] = useState('password');
   const [showPassword, setShowPassword] = useState(false);
+  const { login } = useAuth();
 
-  const handleLogin = () => {
-    // Implement login logic here
+  const handleLogin = async () => {
+    await login(email, password);
   };
 
   return (

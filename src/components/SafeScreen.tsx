@@ -1,6 +1,6 @@
 import React from 'react';
-import { StyleSheet, View, StatusBar, ViewStyle } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StyleSheet, StatusBar, ViewStyle } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface SafeScreenProps {
   children: React.ReactNode;
@@ -8,14 +8,10 @@ interface SafeScreenProps {
 }
 
 const SafeScreen: React.FC<SafeScreenProps> = ({ children, style }) => {
-  const insets = useSafeAreaInsets();
-
   return (
-    <SafeAreaView style={[styles.container, style]} edges={['top']}>
+    <SafeAreaView style={[styles.container, style]}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
-      <View style={[styles.content, { paddingTop: insets.top }]}>
-        {children}
-      </View>
+      {children}
     </SafeAreaView>
   );
 };
@@ -24,9 +20,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFF',
-  },
-  content: {
-    flex: 1,
   },
 });
 

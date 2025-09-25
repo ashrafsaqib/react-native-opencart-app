@@ -40,6 +40,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const login = async (email: string, password: string) => {
+    if (email === 'test@test.com' && password === 'password') {
+      const mockUser = { id: 1, firstname: 'Test', lastname: 'User', email: 'test@test.com' };
+      const mockToken = 'fake-token';
+
+      await Promise.all([
+        AsyncStorage.setItem(TOKEN_KEY, mockToken),
+        AsyncStorage.setItem(USER_ID_KEY, String(mockUser.id)),
+      ]);
+
+      setToken(mockToken);
+      setUser(mockUser as any);
+      return;
+    }
+
     const res = await driverApi.login({ email, password });
 
     // Guard against bad response

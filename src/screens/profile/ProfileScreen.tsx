@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigation } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from '../auth/LoginScreen';
 import RegisterScreen from '../auth/RegisterScreen';
@@ -9,16 +10,22 @@ import ForgotPasswordScreen from '../auth/ForgotPasswordScreen';
 
 const Stack = createNativeStackNavigator();
 
-const UserProfileContent = () => {
+const ProfileScreen = () => {
   const { logout, user, token } = useAuth();
+  const navigation = useNavigation();
+
+  const handleMenuPress = (screen: string) => {
+    navigation.navigate(screen);
+  };
+
   const menuItems = [
-    { icon: 'person-outline', title: 'Edit Profile', action: () => {} },
-    { icon: 'location-outline', title: 'Shipping Address', action: () => {} },
-    { icon: 'card-outline', title: 'Payment Methods', action: () => {} },
-    { icon: 'time-outline', title: 'Order History', action: () => {} },
-    { icon: 'notifications-outline', title: 'Notifications', action: () => {} },
-    { icon: 'settings-outline', title: 'Settings', action: () => {} },
-    { icon: 'help-circle-outline', title: 'Help Center', action: () => {} },
+    { icon: 'person-outline', title: 'Edit Profile', action: () => handleMenuPress('EditProfile') },
+    { icon: 'location-outline', title: 'Shipping Address', action: () => handleMenuPress('ShippingAddress') },
+    { icon: 'card-outline', title: 'Payment Methods', action: () => handleMenuPress('PaymentMethods') },
+    { icon: 'time-outline', title: 'Order History', action: () => handleMenuPress('OrderHistory') },
+    { icon: 'notifications-outline', title: 'Notifications', action: () => handleMenuPress('Notifications') },
+    { icon: 'settings-outline', title: 'Settings', action: () => handleMenuPress('Settings') },
+    { icon: 'help-circle-outline', title: 'Help Center', action: () => handleMenuPress('HelpCenter') },
     { icon: 'log-out-outline', title: 'Logout', action: logout },
   ];
 
@@ -36,6 +43,16 @@ const UserProfileContent = () => {
     </TouchableOpacity>
   );
 
+  if (!user || !token) {
+    return (
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      </Stack.Navigator>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -47,8 +64,8 @@ const UserProfileContent = () => {
           <View style={styles.avatarContainer}>
             <Ionicons name="person" size={40} color="#FF6B3E" />
           </View>
-          <Text style={styles.name}>User #{user?.id}</Text>
-          <Text style={styles.email}>Authenticated User</Text>
+          <Text style={styles.name}>{user.firstname} {user.lastname}</Text>
+          <Text style={styles.email}>{user.email}</Text>
         </View>
 
         <View style={styles.menuContainer}>
@@ -57,22 +74,6 @@ const UserProfileContent = () => {
       </ScrollView>
     </View>
   );
-};
-
-const ProfileScreen = () => {
-  const { user, token } = useAuth();
-
-  if (!user || !token) {
-    return (
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Register" component={RegisterScreen} />
-        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-      </Stack.Navigator>
-    );
-  }
-
-  return <UserProfileContent />;
 };
 
 const styles = StyleSheet.create({

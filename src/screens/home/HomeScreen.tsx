@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, ScrollView } from 'react-native';
 import Header from '../../components/Header';
-import Banner from '../../components/Banner';
+import Carousel from '../../components/Carousel';
 import Deals from '../../components/Deals';
 import Categories from '../../components/Categories';
 import Products from '../../components/Products';
@@ -18,7 +18,7 @@ const HomeScreen = () => {
         style={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <Banner />
+        <Carousel />
         <Deals />
         <Categories />
         <Products />

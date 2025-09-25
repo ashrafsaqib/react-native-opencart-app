@@ -60,6 +60,14 @@ const products: Product[] = [
   },
 ];
 
+const categories = [
+  { id: '1', name: 'T-shirts', image: 'https://picsum.photos/id/10/200/200' },
+  { id: '2', name: 'Shirts', image: 'https://picsum.photos/id/20/200/200' },
+  { id: '3', name: 'Shoes', image: 'https://picsum.photos/id/30/200/200' },
+  { id: '4', name: 'Jeans', image: 'https://picsum.photos/id/40/200/200' },
+  { id: '5', name: 'Jackets', image: 'https://picsum.photos/id/50/200/200' },
+];
+
 const CategoryScreen = () => {
   const navigation = useNavigation<CategoryScreenNavigationProp>();
   const [selectedSort, setSelectedSort] = useState('Newest');
@@ -92,17 +100,26 @@ const CategoryScreen = () => {
     </TouchableOpacity>
   );
 
-  return (
-    <SafeScreen>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Men's Clothes</Text>
-        <TouchableOpacity>
-          <Ionicons name="options-outline" size={24} color="#000" />
-        </TouchableOpacity>
+  const renderCategory = ({ item }: { item: typeof categories[0] }) => (
+    <TouchableOpacity style={styles.categoryCard}>
+      <Image source={{ uri: item.image }} style={styles.categoryImage} />
+      <Text style={styles.categoryName}>{item.name}</Text>
+    </TouchableOpacity>
+  );
+
+  const ListHeader = () => (
+    <>
+      {/* Category Grid */}
+      <View style={styles.categoryContainer}>
+        <Text style={styles.categoryTitle}>Categories</Text>
+        <FlatList
+          data={categories}
+          renderItem={renderCategory}
+          keyExtractor={(item) => item.id}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoryList}
+        />
       </View>
 
       {/* Sort Bar */}
@@ -132,6 +149,21 @@ const CategoryScreen = () => {
           </TouchableOpacity>
         ))}
       </ScrollView>
+    </>
+  );
+
+  return (
+    <SafeScreen>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="chevron-back" size={24} color="#000" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Men's Clothes</Text>
+        <TouchableOpacity>
+          <Ionicons name="options-outline" size={24} color="#000" />
+        </TouchableOpacity>
+      </View>
 
       {/* Product Grid */}
       <FlatList
@@ -139,6 +171,7 @@ const CategoryScreen = () => {
         renderItem={renderProduct}
         keyExtractor={(item) => item.id}
         numColumns={2}
+        ListHeaderComponent={ListHeader}
         columnWrapperStyle={styles.productRow}
         contentContainerStyle={styles.productList}
         showsVerticalScrollIndicator={false}
@@ -161,6 +194,34 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
+  },
+  categoryContainer: {
+    paddingVertical: 16,
+  },
+  categoryTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 12,
+    paddingHorizontal: 16,
+  },
+  categoryList: {
+    paddingHorizontal: 16,
+  },
+  categoryCard: {
+    width: 100,
+    marginRight: 16,
+    alignItems: 'center',
+  },
+  categoryImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginBottom: 8,
+  },
+  categoryName: {
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
   },
   sortBar: {
     borderBottomWidth: 1,
