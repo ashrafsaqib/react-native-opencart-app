@@ -7,10 +7,12 @@ import ProductScreen from './src/screens/product/ProductScreen';
 import BottomTabs from './src/navigation/BottomTabs';
 import { WishlistProvider } from './src/context/WishlistContext';
 import WishlistScreen from './src/screens/wishlist/WishlistScreen';
+import { AuthProvider } from './src/context/AuthContext';
 
 export type RootStackParamList = {
   MainTabs: undefined;
   Product: { product: any };
+  Wishlist: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -47,7 +49,9 @@ function RootStack() {
 export default function App() {
   return (
     <SafeAreaProvider>
+      <AuthProvider>
         <RootStack />
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }

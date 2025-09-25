@@ -10,7 +10,7 @@ import ForgotPasswordScreen from '../auth/ForgotPasswordScreen';
 const Stack = createNativeStackNavigator();
 
 const UserProfileContent = () => {
-  const { logout } = useAuth();
+  const { logout, user, token } = useAuth();
   const menuItems = [
     { icon: 'person-outline', title: 'Edit Profile', action: () => {} },
     { icon: 'location-outline', title: 'Shipping Address', action: () => {} },
@@ -47,8 +47,8 @@ const UserProfileContent = () => {
           <View style={styles.avatarContainer}>
             <Ionicons name="person" size={40} color="#FF6B3E" />
           </View>
-          <Text style={styles.name}>John Doe</Text>
-          <Text style={styles.email}>john.doe@example.com</Text>
+          <Text style={styles.name}>User #{user?.id}</Text>
+          <Text style={styles.email}>Authenticated User</Text>
         </View>
 
         <View style={styles.menuContainer}>
@@ -60,9 +60,9 @@ const UserProfileContent = () => {
 };
 
 const ProfileScreen = () => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
 
-  if (!user) {
+  if (!user || !token) {
     return (
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Login" component={LoginScreen} />
