@@ -40,7 +40,7 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
-      <View style={[styles.contentContainer, { paddingTop: insets.top }]}>
+      <View style={[styles.contentContainer]}>
         <ScrollView>
           {/* Header */}
           <View style={styles.header}>

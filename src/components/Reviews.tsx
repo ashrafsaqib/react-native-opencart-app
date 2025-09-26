@@ -126,6 +126,7 @@ const styles = StyleSheet.create({
   },
   reviewsContainer: {
     paddingHorizontal: 12,
+    paddingBottom: 8,
   },
   reviewCard: {
     width: 300,

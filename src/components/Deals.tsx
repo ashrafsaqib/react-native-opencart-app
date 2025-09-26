@@ -181,6 +181,7 @@ const styles = StyleSheet.create({
   },
   dealsScroll: {
     paddingLeft: 16,
+    paddingBottom: 8,
   },
   dealCard: {
     width: 160,
