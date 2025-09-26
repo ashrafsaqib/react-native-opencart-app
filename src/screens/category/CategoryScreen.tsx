@@ -100,57 +100,72 @@ const CategoryScreen = () => {
     </TouchableOpacity>
   );
 
-  const renderCategory = ({ item }: { item: typeof categories[0] }) => (
-    <TouchableOpacity style={styles.categoryCard}>
-      <Image source={{ uri: item.image }} style={styles.categoryImage} />
-      <Text style={styles.categoryName}>{item.name}</Text>
-    </TouchableOpacity>
-  );
+  const renderCategory = ({ item }: { item: typeof categories[0] }) => {
+    if (!item.name) {
+      return <View style={styles.categoryCard} />;
+    }
+    return (
+      <TouchableOpacity style={styles.categoryCard}>
+        <Image source={{ uri: item.image }} style={styles.categoryImage} />
+        <Text style={styles.categoryName}>{item.name}</Text>
+      </TouchableOpacity>
+    );
+  };
 
-  const ListHeader = () => (
-    <>
-      {/* Category Grid */}
-      <View style={styles.categoryContainer}>
-        <Text style={styles.categoryTitle}>Categories</Text>
-        <FlatList
-          data={categories}
-          renderItem={renderCategory}
-          keyExtractor={(item) => item.id}
+  const ListHeader = () => {
+    const numColumns = 3;
+    const formattedCategories = [...categories];
+    const itemsToPad =
+      (numColumns - (formattedCategories.length % numColumns)) % numColumns;
+    for (let i = 0; i < itemsToPad; i++) {
+      formattedCategories.push({ id: `blank-${i}`, name: '', image: '' });
+    }
+
+    return (
+      <>
+        {/* Category Grid */}
+        <View style={styles.categoryContainer}>
+          <Text style={styles.categoryTitle}>Categories</Text>
+          <FlatList
+            data={formattedCategories}
+            renderItem={renderCategory}
+            keyExtractor={(item) => item.id}
+            numColumns={numColumns}
+            columnWrapperStyle={{ justifyContent: 'space-between' }}
+            contentContainerStyle={styles.categoryList}
+          />
+        </View>
+
+        {/* Sort Bar */}
+        <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryList}
-        />
-      </View>
-
-      {/* Sort Bar */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.sortBar}
-        contentContainerStyle={styles.sortBarContent}
-      >
-        {sortOptions.map((option) => (
-          <TouchableOpacity
-            key={option}
-            style={[
-              styles.sortOption,
-              selectedSort === option && styles.selectedSort,
-            ]}
-            onPress={() => setSelectedSort(option)}
-          >
-            <Text
+          style={styles.sortBar}
+          contentContainerStyle={styles.sortBarContent}
+        >
+          {sortOptions.map((option) => (
+            <TouchableOpacity
+              key={option}
               style={[
-                styles.sortOptionText,
-                selectedSort === option && styles.selectedSortText,
+                styles.sortOption,
+                selectedSort === option && styles.selectedSort,
               ]}
+              onPress={() => setSelectedSort(option)}
             >
-              {option}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </>
-  );
+              <Text
+                style={[
+                  styles.sortOptionText,
+                  selectedSort === option && styles.selectedSortText,
+                ]}
+              >
+                {option}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </>
+    );
+  };
 
   return (
     <SafeScreen>
@@ -209,8 +224,8 @@ const styles = StyleSheet.create({
   },
   categoryCard: {
     width: 100,
-    marginRight: 16,
     alignItems: 'center',
+    marginBottom: 16,
   },
   categoryImage: {
     width: 80,
