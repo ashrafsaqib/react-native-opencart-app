@@ -15,9 +15,9 @@ import SafeScreen from '../../components/SafeScreen';
 
 const WishlistScreen = () => {
   const { wishlist, removeFromWishlist } = useWishlist();
-  const navigation = useNavigation();
+  const navigation: any = useNavigation();
 
-  const renderItem = ({ item }) => (
+  const renderItem = ({ item }: { item: any }) => (
     <TouchableOpacity
       style={styles.productCard}
       onPress={() => navigation.navigate('Product', { product: item })}

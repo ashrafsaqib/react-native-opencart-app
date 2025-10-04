@@ -1,45 +1,26 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { View, Text, StyleSheet, Image } from 'react-native';
 
-const badges = [
-  {
-    id: '1',
-    icon: 'shield-checkmark',
-    title: 'Secure Payment',
-    description: '100% Protected',
-  },
-  {
-    id: '2',
-    icon: 'car',
-    title: 'Free Shipping',
-    description: 'Orders over $50',
-  },
-  {
-    id: '3',
-    icon: 'reload',
-    title: 'Easy Returns',
-    description: '30-Day Returns',
-  },
-  {
-    id: '4',
-    icon: 'headset',
-    title: '24/7 Support',
-    description: 'Ready to help',
-  },
-];
+interface Props {
+  badges?: Array<{ image?: string; title?: string; short_description?: string }>;
+}
 
-const TrustBadges = () => {
+const TrustBadges = ({ badges }: Props) => {
+  const items = (badges && badges.length) ? badges : [];
+  console.log('TrustBadges items:', items);
   return (
     <View style={styles.container}>
       <View style={styles.badgesContainer}>
-        {badges.map((badge) => (
-          <View key={badge.id} style={styles.badge}>
+        {items.map((badge, index) => (
+          <View key={index} style={styles.badge}>
             <View style={styles.iconContainer}>
-              <Ionicons name={badge.icon} size={24} color="#FF6B3E" />
+              <Image
+                source={{ uri: badge.image || 'https://via.placeholder.com/48' }}
+                style={styles.badgeImage}
+              />
             </View>
             <Text style={styles.title}>{badge.title}</Text>
-            <Text style={styles.description}>{badge.description}</Text>
+            <Text style={styles.description}>{badge.short_description}</Text>
           </View>
         ))}
       </View>
@@ -75,6 +56,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
+  },
+  badgeImage: {
+    width: 36,
+    height: 36,
+    resizeMode: 'contain',
   },
   title: {
     fontSize: 14,

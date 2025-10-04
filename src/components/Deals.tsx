@@ -15,7 +15,21 @@ interface TimeLeft {
   seconds: number;
 }
 
-const Deals = () => {
+interface Props {
+  deal?: {
+    end_date?: string;
+    products?: Array<{
+      product_id?: string;
+      name?: string;
+      image?: string;
+      price?: string;
+      special?: string | null;
+      discount?: number;
+    }>;
+  };
+}
+
+const Deals = ({ deal }: Props) => {
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({
     hours: 4,
     minutes: 0,
@@ -44,32 +58,16 @@ const Deals = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const deals = [
-    {
-      id: '1',
-      title: 'Summer Collection',
-      price: '$29.99',
-      originalPrice: '$59.99',
-      discount: '50%',
-      image: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=800&h=800',
-    },
-    {
-      id: '2',
-      title: 'Casual Wear',
-      price: '$19.99',
-      originalPrice: '$39.99',
-      discount: '50%',
-      image: 'https://images.unsplash.com/photo-1516762689617-e1cffcef479d?auto=format&fit=crop&w=800&h=800',
-    },
-    {
-      id: '3',
-      title: 'Sports Collection',
-      price: '$24.99',
-      originalPrice: '$49.99',
-      discount: '50%',
-      image: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=800&h=800',
-    },
-  ];
+  const deals = (deal?.products && deal.products.length)
+    ? deal.products.map((p, idx) => ({
+        id: p.product_id ?? `${idx}`,
+        title: p.name ?? 'Product',
+        price: p.special ?? p.price ?? '$0',
+        originalPrice: p.price ?? p.special ?? '$0',
+        discount: p.discount ? `${p.discount}%` : '0%',
+        image: p.image ?? 'https://via.placeholder.com/250',
+      }))
+    : [];
 
   const formatNumber = (num: number): string => {
     return num < 10 ? `0${num}` : num.toString();

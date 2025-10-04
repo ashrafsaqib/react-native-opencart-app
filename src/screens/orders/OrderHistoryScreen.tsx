@@ -27,7 +27,7 @@ const orders = [
 ];
 
 const OrderHistoryScreen = () => {
-  const navigation = useNavigation();
+  const navigation: any = useNavigation();
 
   const renderOrder = ({ item }: { item: typeof orders[0] }) => (
     <TouchableOpacity 

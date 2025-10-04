@@ -5,7 +5,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 
 const SettingsScreen = () => {
-  const navigation = useNavigation();
+  const navigation: any = useNavigation();
 
   return (
     <View style={styles.container}>

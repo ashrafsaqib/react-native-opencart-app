@@ -14,43 +14,21 @@ interface Review {
   productName: string;
 }
 
-const reviews: Review[] = [
-  {
-    id: '1',
-    user: {
-      name: 'John D.',
-      avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&w=100&h=100'
-    },
-    rating: 5,
-    comment: 'Perfect fit and great quality. Exactly what I was looking for!',
-    date: '2 days ago',
-    productName: 'Original Stripe Polo'
-  },
-  {
-    id: '2',
-    user: {
-      name: 'Sarah M.',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&h=100'
-    },
-    rating: 4,
-    comment: 'Beautiful design and comfortable material. Quick delivery too.',
-    date: '1 week ago',
-    productName: 'Training Dri-FIT 2.0'
-  },
-  {
-    id: '3',
-    user: {
-      name: 'Mike R.',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&h=100'
-    },
-    rating: 5,
-    comment: 'Exceeded my expectations! Will definitely buy again.',
-    date: '2 weeks ago',
-    productName: 'Diesel S-KB Sneakers'
-  }
-];
+interface Props {
+  reviews?: Array<{ author?: string; text?: string; rating?: string; date_added?: string }>;
+}
 
-const Reviews = () => {
+const Reviews = ({ reviews }: Props) => {
+  const reviewsData: Review[] = (reviews && reviews.length)
+    ? reviews.map((r, idx) => ({
+        id: `${idx}`,
+        user: { name: r.author ?? 'Anonymous', avatar: 'https://via.placeholder.com/100' },
+        rating: Number(r.rating) || 0,
+        comment: r.text ?? '',
+        date: r.date_added ?? '',
+        productName: '',
+      }))
+    : [];
   const renderStars = (rating: number) => {
     return Array(5).fill(0).map((_, index) => (
       <Ionicons
@@ -94,7 +72,7 @@ const Reviews = () => {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.reviewsContainer}
       >
-        {reviews.map(renderReview)}
+        {reviewsData.map(renderReview)}
       </ScrollView>
     </View>
   );

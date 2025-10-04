@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
@@ -12,7 +12,7 @@ const Stack = createNativeStackNavigator();
 
 const ProfileScreen = () => {
   const { logout, user, token } = useAuth();
-  const navigation = useNavigation();
+  const navigation: any = useNavigation();
 
   const handleMenuPress = (screen: string) => {
     navigation.navigate(screen);
@@ -54,7 +54,7 @@ const ProfileScreen = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Profile</Text>
       </View>
@@ -72,7 +72,7 @@ const ProfileScreen = () => {
           {menuItems.map(renderMenuItem)}
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -80,6 +80,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+    marginTop: 20,
   },
   header: {
     padding: 16,

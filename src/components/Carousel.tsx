@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { View, StyleSheet, FlatList, Image, Dimensions } from 'react-native';
+import { View, StyleSheet, FlatList, Image, Dimensions, TouchableOpacity, Linking } from 'react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -9,28 +9,49 @@ const carouselData = [
   { id: '3', image: 'https://picsum.photos/id/1018/1000/600' },
 ];
 
-const Carousel = () => {
+interface Props {
+  banners?: Array<{ title?: string; link?: string; image?: string }>;
+}
+
+const Carousel = ({ banners }: Props) => {
   const flatListRef = useRef<FlatList<any>>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
+  const data = (banners && banners.length)
+    ? banners.map((b, idx) => ({ id: `${idx}`, image: b.image ?? '', link: b.link ?? '' }))
+    : carouselData;
+
   useEffect(() => {
     const interval = setInterval(() => {
-      const nextIndex = (activeIndex + 1) % carouselData.length;
+      const nextIndex = (activeIndex + 1) % data.length;
       flatListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
       setActiveIndex(nextIndex);
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [activeIndex]);
+  }, [activeIndex, data.length]);
 
   const onMomentumScrollEnd = (event: any) => {
     const newIndex = Math.round(event.nativeEvent.contentOffset.x / screenWidth);
     setActiveIndex(newIndex);
   };
 
-  const renderItem = ({ item }: { item: typeof carouselData[0] }) => (
+  const openLink = async (rawLink?: string) => {
+    if (!rawLink) return;
+    const link = rawLink.replace(/&amp;/g, '&');
+    try {
+      const supported = await Linking.canOpenURL(link);
+      if (supported) await Linking.openURL(link);
+    } catch (err) {
+      console.warn('Cannot open link', link, err);
+    }
+  };
+
+  const renderItem = ({ item }: { item: { id: string; image: string; link?: string } }) => (
     <View style={styles.slide}>
-      <Image source={{ uri: item.image }} style={styles.image} />
+      <TouchableOpacity onPress={() => openLink(item.link)} activeOpacity={0.8}>
+        <Image source={{ uri: item.image }} style={styles.image} />
+      </TouchableOpacity>
     </View>
   );
 
@@ -38,7 +59,7 @@ const Carousel = () => {
     <View style={styles.container}>
       <FlatList
         ref={flatListRef}
-        data={carouselData}
+        data={data}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         horizontal

@@ -20,31 +20,26 @@ interface Product {
   image: string;
 }
 
-const products: Product[] = [
-  {
-    id: '1',
-    name: 'Original Stripe Polo Ralph Lauren - Slim Fit',
-    price: '$89',
-    sizes: ['S', 'M', 'L', 'XL'],
-    image: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=500&h=500',
-  },
-  {
-    id: '2',
-    name: 'Training Dri-FIT 2.0 - t-shirt in black',
-    price: '$39',
-    sizes: ['S', 'M', 'L', 'XL'],
-    image: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=500&h=500',
-  },
-  {
-    id: '3',
-    name: 'Diesel S-KB ASTICO low lace sneakers',
-    price: '$99',
-    sizes: ['8.5 US', '9 US', '10 US'],
-    image: 'https://images.unsplash.com/photo-1560769629-975ec94e6a86?auto=format&fit=crop&w=500&h=500',
-  },
-];
+interface PropsProducts {
+  products?: Array<{
+    name?: string;
+    image?: string;
+    price?: string;
+    special?: string | null;
+  }>;
+  title?: string;
+}
 
-const Products = () => {
+const Products = ({ products, title = 'Popular' }: PropsProducts) => {
+  const productsData: Product[] = (products && products.length)
+    ? products.map((p, idx) => ({
+        id: `${idx}`,
+        name: p.name ?? 'Product',
+        price: p.special ?? p.price ?? '$0',
+        sizes: [],
+        image: p.image ?? 'https://via.placeholder.com/250',
+      }))
+    : [];
   const navigation = useNavigation<ProductsNavigationProp>();
 
   const renderProduct = ({ item }: { item: Product }) => (
@@ -91,7 +86,7 @@ const Products = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Popular</Text>
+        <Text style={styles.title}>{title}</Text>
         <View style={styles.sortContainer}>
           <Text style={styles.sortLabel}>Newest</Text>
           <View style={styles.divider} />
@@ -101,7 +96,7 @@ const Products = () => {
         </View>
       </View>
       <FlatList
-        data={products}
+        data={productsData}
         renderItem={renderProduct}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
