@@ -4,13 +4,9 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import WishlistButton from './WishlistButton';
+import { RootStackParamList } from '../../App';
 
-type RootStackParamList = {
-  MainTabs: undefined;
-  Product: { product: Product };
-};
-
-type ProductsNavigationProp = NativeStackNavigationProp<RootStackParamList, 'MainTabs'>;
+type ProductsNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface Product {
   id: string;
@@ -22,6 +18,7 @@ interface Product {
 
 interface PropsProducts {
   products?: Array<{
+    id?: string;
     name?: string;
     image?: string;
     price?: string;
@@ -33,7 +30,7 @@ interface PropsProducts {
 const Products = ({ products, title = 'Popular' }: PropsProducts) => {
   const productsData: Product[] = (products && products.length)
     ? products.map((p, idx) => ({
-        id: `${idx}`,
+        id: p.id ?? `${idx}`,
         name: p.name ?? 'Product',
         price: p.special ?? p.price ?? '$0',
         sizes: [],
@@ -45,7 +42,7 @@ const Products = ({ products, title = 'Popular' }: PropsProducts) => {
   const renderProduct = ({ item }: { item: Product }) => (
     <TouchableOpacity
       style={styles.product}
-      onPress={() => navigation.navigate('Product', { product: item })}
+      onPress={() => navigation.navigate('Product', { product_id: item.id })}
     >
       <Image source={{ uri: item.image }} style={styles.productImage} />
       <View style={styles.productDetails}>
@@ -136,21 +133,33 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
   },
   product: {
-    marginBottom: 24,
+    marginBottom: 16,
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    padding: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
   productImage: {
     width: '100%',
     height: 200,
-    borderRadius: 12,
+    borderRadius: 10,
     marginBottom: 12,
+    resizeMode: 'cover',
+    backgroundColor: '#f6f6f6',
   },
   productDetails: {
     paddingHorizontal: 4,
+    paddingBottom: 4,
   },
   productName: {
     fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
+    fontWeight: '600',
+    color: '#222',
     marginBottom: 8,
   },
   sizeContainer: {
@@ -158,9 +167,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   size: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#666',
-    marginRight: 12,
+    marginRight: 8,
+    backgroundColor: '#FAFAFA',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
   },
   actionsContainer: {
     flexDirection: 'row',

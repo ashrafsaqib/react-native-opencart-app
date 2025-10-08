@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { driverApi } from '../api/driverApi';
 
-type User = { id: number };
+type User = { id: number; firstname?: string; lastname?: string; email?: string };
 const AuthContext = createContext<{
   user: User | null;
   token: string | null;

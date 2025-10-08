@@ -11,7 +11,7 @@ import { AuthProvider } from './src/context/AuthContext';
 
 export type RootStackParamList = {
   MainTabs: undefined;
-  Product: { product: any };
+  Product: { product_id: string };
   Wishlist: undefined;
 };
 

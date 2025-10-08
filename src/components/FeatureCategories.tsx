@@ -35,8 +35,6 @@ const FeatureCategories = ({ categories }: Props) => {
       </View>
 
       <View style={styles.productsSection}>
-        {/* Reuse the app's Products component so selected category products
-            render with the same look & feel as the rest of the app */}
         <Products products={selectedCategory.products} title={selectedCategory.name} />
       </View>
     </View>

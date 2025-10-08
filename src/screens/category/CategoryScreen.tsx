@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,112 +7,125 @@ import {
   TouchableOpacity,
   FlatList,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import ProductCard from '../../components/ProductCard';
 import SafeScreen from '../../components/SafeScreen';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp, CompositeNavigationProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../../App';
+import { BASE_URL } from '../../../config';
+import { CategoryStackParamList } from '../../navigation/CategoryStack';
 
-type RootStackParamList = {
-  Home: undefined;
-  Product: undefined;
-  Category: undefined;
-};
-
-type CategoryScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Category'>;
+type CategoryScreenNavigationProp = CompositeNavigationProp<
+  NativeStackNavigationProp<CategoryStackParamList, 'Category'>,
+  NativeStackNavigationProp<RootStackParamList>
+>;
+type CategoryScreenRouteProp = RouteProp<CategoryStackParamList, 'Category'>;
 
 interface Product {
   id: string;
   name: string;
   price: string;
-  sizes: string[];
+  special?: string;
+  image: string;
+  options?: boolean;
+}
+
+interface Category {
+  id: string;
+  name: string;
   image: string;
 }
 
-const products: Product[] = [
-  {
-    id: '1',
-    name: 'Original Stripe Polo Ralph Lauren - Slim Fit',
-    price: '$89',
-    sizes: ['S', 'M', 'L', 'XL'],
-    image: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=500&h=500',
-  },
-  {
-    id: '2',
-    name: 'Training Dri-FIT 2.0 - t-shirt in black',
-    price: '$39',
-    sizes: ['S', 'M', 'L', 'XL'],
-    image: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=500&h=500',
-  },
-  {
-    id: '3',
-    name: 'Diesel S-KB ASTICO low lace sneakers',
-    price: '$99',
-    sizes: ['8.5 US', '9 US', '10 US'],
-    image: 'https://images.unsplash.com/photo-1560769629-975ec94e6a86?auto=format&fit=crop&w=500&h=500',
-  },
-  {
-    id: '4',
-    name: 'Classic Oxford Shirt - White',
-    price: '$59',
-    sizes: ['S', 'M', 'L', 'XL'],
-    image: 'https://images.unsplash.com/photo-1598032895397-b9472444bf93?auto=format&fit=crop&w=500&h=500',
-  },
-];
-
-const categories = [
-  { id: '1', name: 'T-shirts', image: 'https://picsum.photos/id/10/200/200' },
-  { id: '2', name: 'Shirts', image: 'https://picsum.photos/id/20/200/200' },
-  { id: '3', name: 'Shoes', image: 'https://picsum.photos/id/30/200/200' },
-  { id: '4', name: 'Jeans', image: 'https://picsum.photos/id/40/200/200' },
-  { id: '5', name: 'Jackets', image: 'https://picsum.photos/id/50/200/200' },
-];
-
 const CategoryScreen = () => {
   const navigation = useNavigation<CategoryScreenNavigationProp>();
+  const route = useRoute<CategoryScreenRouteProp>();
+  const { category_id } = route.params || {};
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [description, setDescription] = useState('');
+  const [descExpanded, setDescExpanded] = useState(false);
+  const [showDescToggle, setShowDescToggle] = useState(false);
+  const [descMeasured, setDescMeasured] = useState(false);
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [selectedSort, setSelectedSort] = useState('Newest');
   const sortOptions = ['Newest', 'Price High', 'Price Low'];
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        let url = '';
+        if (category_id) {
+          url = `${BASE_URL}.getCategoryView&category_id=${category_id}`;
+        } else {
+          url = `${BASE_URL}.getCategories`;
+        }
+
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+
+        if (category_id) {
+          setDescription(json.description || '');
+          setCategories(json.subcategories || []);
+          setProducts(json.products || []);
+        } else {
+          setCategories(json.categories || []);
+          setProducts([]);
+        }
+      } catch (err: any) {
+        setError(err.message || 'Failed to fetch data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [category_id]);
+
   const renderProduct = ({ item }: { item: Product }) => (
-    <TouchableOpacity
-      style={styles.productCard}
-      onPress={() => navigation.navigate('Product')}
-    >
-      <Image source={{ uri: item.image }} style={styles.productImage} />
-      <View style={styles.productInfo}>
-        <Text style={styles.productName} numberOfLines={2}>
-          {item.name}
-        </Text>
-        <View style={styles.sizeContainer}>
-          {item.sizes.map((size, index) => (
-            <Text key={index} style={styles.size}>
-              {size}
-            </Text>
-          ))}
-        </View>
-        <View style={styles.priceRow}>
-          <Text style={styles.price}>{item.price}</Text>
-          <TouchableOpacity style={styles.addButton}>
-            <Ionicons name="add" size={20} color="#FF6B3E" />
-          </TouchableOpacity>
-        </View>
-      </View>
-    </TouchableOpacity>
+    <ProductCard
+      product={item}
+      onPress={() => navigation.navigate('Product', { product_id: item.id })}
+      onAdd={() => {
+      }}
+    />
   );
 
-  const renderCategory = ({ item }: { item: typeof categories[0] }) => {
+  const renderCategory = ({ item }: { item: Category }) => {
     if (!item.name) {
       return <View style={styles.categoryCard} />;
     }
     return (
-      <TouchableOpacity style={styles.categoryCard}>
-        <Image source={{ uri: item.image }} style={styles.categoryImage} />
+      <TouchableOpacity
+        style={styles.categoryCard}
+        onPress={() => navigation.push('Category', { category_id: item.id })}>
+        {item.image && !failedImages[item.id] ? (
+          <Image
+            source={{ uri: item.image }}
+            style={styles.categoryImage}
+            onError={() => setFailedImages((s) => ({ ...s, [item.id]: true }))}
+          />
+        ) : (
+          <View style={[styles.categoryImage, styles.fallbackCategory]}>
+            <Ionicons name="play" size={28} color="#FF6B3E" />
+          </View>
+        )}
         <Text style={styles.categoryName}>{item.name}</Text>
       </TouchableOpacity>
     );
   };
 
   const ListHeader = () => {
+    if (!category_id) return null;
+
     const numColumns = 3;
     const formattedCategories = [...categories];
     const itemsToPad =
@@ -123,26 +136,50 @@ const CategoryScreen = () => {
 
     return (
       <>
-        {/* Category Grid */}
-        <View style={styles.categoryContainer}>
-          <Text style={styles.categoryTitle}>Categories</Text>
-          <FlatList
-            data={formattedCategories}
-            renderItem={renderCategory}
-            keyExtractor={(item) => item.id}
-            numColumns={numColumns}
-            columnWrapperStyle={{ justifyContent: 'space-between' }}
-            contentContainerStyle={styles.categoryList}
-          />
-        </View>
+        {categories.length > 0 && (
+          <View style={styles.categoryContainer}>
+            <Text style={styles.categoryTitle}>Subcategories</Text>
+            <FlatList
+              data={formattedCategories}
+              renderItem={renderCategory}
+              keyExtractor={(item) => item.id}
+              numColumns={numColumns}
+              columnWrapperStyle={{ justifyContent: 'space-between' }}
+              contentContainerStyle={styles.categoryList}
+            />
+          </View>
+        )}
 
-        {/* Sort Bar */}
+        {description && (
+          <View style={styles.descriptionContainer}>
+            <Text
+              style={styles.descriptionText}
+              numberOfLines={descExpanded ? undefined : descMeasured ? 2 : undefined}
+              onTextLayout={(e) => {
+                const lines = e.nativeEvent.lines || [];
+                if (!descMeasured) {
+                  if (lines.length > 2) setShowDescToggle(true);
+                  setDescMeasured(true);
+                }
+              }}
+            >
+              {description}
+            </Text>
+            {showDescToggle && (
+              <TouchableOpacity onPress={() => setDescExpanded((s) => !s)}>
+                <Text style={styles.descriptionToggleText}>
+                  {descExpanded ? 'Show less' : 'Add more...'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           style={styles.sortBar}
-          contentContainerStyle={styles.sortBarContent}
-        >
+          contentContainerStyle={styles.sortBarContent}>
           {sortOptions.map((option) => (
             <TouchableOpacity
               key={option}
@@ -150,14 +187,12 @@ const CategoryScreen = () => {
                 styles.sortOption,
                 selectedSort === option && styles.selectedSort,
               ]}
-              onPress={() => setSelectedSort(option)}
-            >
+              onPress={() => setSelectedSort(option)}>
               <Text
                 style={[
                   styles.sortOptionText,
                   selectedSort === option && styles.selectedSortText,
-                ]}
-              >
+                ]}>
                 {option}
               </Text>
             </TouchableOpacity>
@@ -167,35 +202,103 @@ const CategoryScreen = () => {
     );
   };
 
+  if (loading) {
+    return (
+      <SafeScreen>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#FF6B3E" />
+        </View>
+      </SafeScreen>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeScreen>
+        <View style={styles.centered}>
+          <Text style={{ color: 'red' }}>{error}</Text>
+        </View>
+      </SafeScreen>
+    );
+  }
+
   return (
     <SafeScreen>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Men's Clothes</Text>
+        <Text style={styles.headerTitle}>
+          {category_id ? 'Category' : 'All Categories'}
+        </Text>
         <TouchableOpacity>
           <Ionicons name="options-outline" size={24} color="#000" />
         </TouchableOpacity>
       </View>
 
-      {/* Product Grid */}
-      <FlatList
-        data={products}
-        renderItem={renderProduct}
-        keyExtractor={(item) => item.id}
-        numColumns={2}
-        ListHeaderComponent={ListHeader}
-        columnWrapperStyle={styles.productRow}
-        contentContainerStyle={styles.productList}
-        showsVerticalScrollIndicator={false}
-      />
+      {products.length > 0 ? (
+        <FlatList
+          data={products}
+          renderItem={renderProduct}
+          keyExtractor={(item) => item.id}
+          numColumns={2}
+          ListHeaderComponent={ListHeader}
+          columnWrapperStyle={styles.productRow}
+          contentContainerStyle={styles.productList}
+          showsVerticalScrollIndicator={false}
+        />
+      ) : (
+        <>
+          {description ? (
+            <View style={styles.descriptionContainer}>
+              <Text
+                style={styles.descriptionText}
+                numberOfLines={descExpanded ? undefined : descMeasured ? 2 : undefined}
+                onTextLayout={(e) => {
+                  const lines = e.nativeEvent.lines || [];
+                  if (!descMeasured) {
+                    if (lines.length > 2) setShowDescToggle(true);
+                    setDescMeasured(true);
+                  }
+                }}
+              >
+                {description}
+              </Text>
+              {showDescToggle && (
+                <TouchableOpacity onPress={() => setDescExpanded((s) => !s)}>
+                  <Text style={styles.descriptionToggleText}>
+                    {descExpanded ? 'Show less' : 'Add more...'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          ) : null}
+
+          <FlatList
+            data={categories}
+            renderItem={renderCategory}
+            keyExtractor={(item) => item.id}
+            numColumns={3}
+            columnWrapperStyle={{ justifyContent: 'space-between' }}
+            contentContainerStyle={styles.categoryList}
+          />
+        </>
+      )}
+      {products.length === 0 && category_id ? (
+        <View style={[styles.centered, styles.emptyOverlay]} pointerEvents="none">
+          <Text style={styles.emptyText}>No products in category</Text>
+        </View>
+      ) : null}
     </SafeScreen>
   );
 };
 
 const styles = StyleSheet.create({
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   container: {
     flex: 1,
     backgroundColor: '#FFF',
@@ -269,58 +372,42 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 8,
   },
-  productCard: {
-    width: '48%',
-    marginBottom: 16,
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    overflow: 'hidden',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+  descriptionContainer: {
+    padding: 16,
   },
-  productImage: {
-    width: '100%',
-    height: 180,
-    resizeMode: 'cover',
-  },
-  productInfo: {
-    padding: 12,
-  },
-  productName: {
+  descriptionText: {
     fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 8,
-    height: 40,
-  },
-  sizeContainer: {
-    flexDirection: 'row',
-    marginBottom: 8,
-  },
-  size: {
-    fontSize: 12,
     color: '#666',
-    marginRight: 8,
   },
-  priceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  price: {
-    fontSize: 16,
-    fontWeight: '600',
+  descriptionToggleText: {
+    marginTop: 8,
     color: '#FF6B3E',
+    fontWeight: '600',
   },
-  addButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#FFF0EC',
+  fallbackImage: {
+    backgroundColor: '#FFF5F2',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  fallbackCategory: {
+    backgroundColor: '#FFF5F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 40,
+  },
+  emptyOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'transparent',
+    zIndex: 10,
+  },
+  emptyText: {
+    color: 'red',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

@@ -7,7 +7,6 @@ interface Props {
 
 const TrustBadges = ({ badges }: Props) => {
   const items = (badges && badges.length) ? badges : [];
-  console.log('TrustBadges items:', items);
   return (
     <View style={styles.container}>
       <View style={styles.badgesContainer}>
@@ -52,7 +51,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#FFF1EC',
+    backgroundColor: '#fbcfbeff',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,

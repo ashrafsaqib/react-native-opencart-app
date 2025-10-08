@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,34 +8,137 @@ import {
   TouchableOpacity,
   Platform,
   StatusBar,
+  ActivityIndicator,
+  FlatList,
+  Dimensions,
+  Alert,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import ProductCard from '../../components/ProductCard';
+import ProductOptions from '../../components/ProductOptions';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRoute } from '@react-navigation/native';
+import { BASE_URL } from '../../../config';
 
 type RootStackParamList = {
   Home: undefined;
-  Product: undefined;
+  Product: { product_id: string };
 };
 
-type ProductScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Product'>;
-
-const sizes = ['S', 'M', 'L', 'XL'];
+type ProductScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'Product'
+>;
 
 interface ProductScreenProps {
   navigation: ProductScreenNavigationProp;
 }
 
 const ProductScreen: React.FC<ProductScreenProps> = ({ navigation }) => {
-  const [selectedSize, setSelectedSize] = useState('M');
+  const route = useRoute();
+  const { product_id } = route.params as { product_id: string };
+  const [product, setProduct] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, any>>({});
+  const [quantity, setQuantity] = useState(1);
+  const [isOptionsValid, setIsOptionsValid] = useState(true);
+  const [activeTab, setActiveTab] = useState<string | null>(null);
+  const [descExpanded, setDescExpanded] = useState(false);
   const insets = useSafeAreaInsets();
+  const flatListRef = useRef<FlatList<any> | null>(null);
+  const productOptionsRef = useRef<any>(null);
+  const { width: screenWidth } = Dimensions.get('window');
 
-  const images = [
-    'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=800&h=800',
-    'https://images.unsplash.com/photo-1598032895397-b9472444bf93?auto=format&fit=crop&w=800&h=800',
-    'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=800&h=800',
-  ];
+  const images = useMemo(() => {
+    if (!product) return [] as string[];
+    const main = product.image || product.thumb || null;
+    const others = Array.isArray(product.images) ? product.images.filter(Boolean) : [];
+    const list: string[] = [];
+    if (main) list.push(main);
+    list.push(...others);
+    if (list.length === 0) list.push('https://via.placeholder.com/600');
+    return list;
+  }, [product]);
+
+  // helpers: parse numeric values from API (strings like "$50.00")
+  const parseNumber = (v: any) => {
+    if (v == null) return NaN;
+    const n = Number(String(v).replace(/[^0-9.-]+/g, ''));
+    return Number.isNaN(n) ? NaN : n;
+  };
+
+  const rewardPointsValue = useMemo(() => {
+    const v = product?.points ?? product?.reward_points ?? product?.reward;
+    const n = parseNumber(v);
+    return Number.isNaN(n) ? 0 : n;
+  }, [product]);
+
+  useEffect(() => {
+    const hasDescription = Boolean(product?.description && String(product.description).replace(/<[^>]*>?/gm, '').trim());
+    const hasSpec = Array.isArray(product?.attribute_groups) && product.attribute_groups.length > 0;
+    const hasReviews = Number(product?.reviews) > 0;
+    const tabs: string[] = [];
+    if (hasDescription) tabs.push('description');
+    if (hasSpec) tabs.push('spec');
+    if (hasReviews) tabs.push('reviews');
+
+    if (tabs.length === 0) {
+      if (activeTab !== null) setActiveTab(null);
+      return;
+    }
+
+    if (!activeTab || !tabs.includes(activeTab)) {
+      setActiveTab(tabs[0]);
+    }
+  }, [product?.description, product?.attribute_groups?.length, product?.reviews]);
+
+  const taxValue = useMemo(() => {
+    const n = parseNumber(product?.tax);
+    return Number.isNaN(n) ? 0 : n;
+  }, [product]);
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+        const url = `${BASE_URL}.getProductDetail&product_id=${product_id}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        setProduct(data);
+      } catch (err) {
+        console.error('Failed to fetch product details:', err);
+        setError('Failed to fetch product details.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProduct();
+  }, [product_id]);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#FF6B3E" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.centered}>
+          <Text>{error}</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -44,13 +147,13 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ navigation }) => {
         <ScrollView>
           {/* Header */}
           <View style={styles.header}>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => navigation.goBack()}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Ionicons name="chevron-back" size={24} color="#000" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Men's Clothes</Text>
+            <Text style={styles.headerTitle}>{product.name}</Text>
             <TouchableOpacity
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
@@ -58,98 +161,256 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ navigation }) => {
             </TouchableOpacity>
           </View>
 
-        {/* Product Images */}
-        <View style={styles.imageContainer}>
-          <Image source={{ uri: images[currentImageIndex] }} style={styles.image} />
-          <View style={styles.imageDots}>
-            {images.map((_, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => setCurrentImageIndex(index)}
-                style={[
-                  styles.dot,
-                  currentImageIndex === index && styles.activeDot,
-                ]}
-              />
-            ))}
-          </View>
-        </View>
+          {/* Product Images */}
+          <View style={styles.imageContainer}>
+            <FlatList
+              ref={flatListRef}
+              data={images}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(_, idx) => String(idx)}
+              renderItem={({ item }) => (
+                <View style={{ width: screenWidth }}>
+                  <Image source={{ uri: item }} style={[styles.image, { width: screenWidth }]} />
+                </View>
+              )}
+              onMomentumScrollEnd={(e) => {
+                const newIndex = Math.round(e.nativeEvent.contentOffset.x / screenWidth);
+                setCurrentImageIndex(newIndex);
+              }}
+            />
 
-        {/* Product Info */}
-        <View style={styles.infoContainer}>
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>Original Stripe Polo Ralph Lauren - Slim Fit</Text>
-            <TouchableOpacity>
-              <Ionicons name="heart-outline" size={24} color="#000" />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.ratingContainer}>
-            <View style={styles.stars}>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Ionicons
-                  key={star}
-                  name={star <= 4 ? 'star' : 'star-half'}
-                  size={16}
-                  color="#FFB800"
+            <View style={styles.imageDots}>
+              {images.map((_, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => {
+                    flatListRef.current?.scrollToIndex({ index, animated: true });
+                    setCurrentImageIndex(index);
+                  }}
+                  style={[styles.dot, currentImageIndex === index && styles.activeDot]}
                 />
               ))}
             </View>
-            <Text style={styles.reviews}>(121)</Text>
           </View>
 
-          {/* Size Selection */}
-          <View style={styles.sizeContainer}>
-            <Text style={styles.sectionTitle}>Size</Text>
-            <View style={styles.sizeOptions}>
-              {sizes.map((size) => (
-                <TouchableOpacity
-                  key={size}
-                  style={[
-                    styles.sizeButton,
-                    selectedSize === size && styles.selectedSize,
-                  ]}
-                  onPress={() => setSelectedSize(size)}
-                >
-                  <Text
-                    style={[
-                      styles.sizeText,
-                      selectedSize === size && styles.selectedSizeText,
-                    ]}
-                  >
-                    {size}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+          {/* Product Info */}
+          <View style={styles.infoContainer}>
+            <View style={styles.titleContainer}>
+              <Text style={styles.title}>{product?.name ?? 'Product'}</Text>
+              <TouchableOpacity>
+                <Ionicons name="heart-outline" size={24} color="#000" />
+              </TouchableOpacity>
             </View>
-          </View>
 
-          {/* Description */}
-          <View style={styles.descriptionContainer}>
-            <Text style={styles.sectionTitle}>Description</Text>
-            <Text style={styles.description}>
-              The Original Stripe Polo by Ralph Lauren offers a timeless design with a modern slim fit. 
-              Made from premium cotton for ultimate comfort. Features classic polo styling with a 
-              three-button placket and signature embroidered pony.
-            </Text>
-            <TouchableOpacity>
-              <Text style={styles.readMore}>Read more...</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </ScrollView>
+            {/* Product meta: show only when data exists */}
+            <View style={styles.metaContainer}>
+              {product?.manufacturer ? (
+                <View style={styles.metaRow}>
+                  <Text style={styles.metaLabel}>Brand:</Text>
+                  <Text style={styles.metaValue}>{product.manufacturer}</Text>
+                </View>
+              ) : null}
 
-      {/* Bottom Bar */}
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom }]}>
-        <View style={styles.priceContainer}>
-          <Text style={styles.priceLabel}>Total price</Text>
-          <Text style={styles.price}>$89.00</Text>
+              {product?.model ? (
+                <View style={styles.metaRow}>
+                  <Text style={styles.metaLabel}>Product Code:</Text>
+                  <Text style={styles.metaValue}>{product.model}</Text>
+                </View>
+              ) : null}
+
+              {rewardPointsValue > 0 ? (
+                <View style={styles.metaRow}>
+                  <Text style={styles.metaLabel}>Reward Points:</Text>
+                  <Text style={styles.metaValue}>{product?.points ?? product?.reward_points ?? product?.reward}</Text>
+                </View>
+              ) : null}
+
+              {(product?.stock || product?.availability) ? (
+                <View style={styles.metaRow}>
+                  <Text style={styles.metaLabel}>Availability:</Text>
+                  <Text style={styles.metaValue}>{product.stock ?? product.availability}</Text>
+                </View>
+              ) : null}
+            </View>
+
+            <View style={styles.ratingContainer}>
+              <View style={styles.stars}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Ionicons
+                    key={star}
+                    name={star <= product.rating ? 'star' : 'star-outline'}
+                    size={16}
+                    color="#FFB800"
+                  />
+                ))}
+              </View>
+              <Text style={styles.reviews}>({product.reviews})</Text>
+            </View>
+
+            {/* Product Options (radio, checkbox, select, text, date, time, file, textarea) */}
+            <ProductOptions 
+              options={product?.options ?? product?.product_options ?? []}
+              ref={productOptionsRef}
+              onChange={(selected, isValid) => {
+                setSelectedOptions(selected);
+                setIsOptionsValid(isValid);
+              }}
+              onQuantityChange={setQuantity}
+              initialQuantity={quantity}
+            />
+
+            {/* Tabs: Description / Specification / Reviews (only show tabs with data) */}
+            {(() => {
+              const hasDescription = Boolean(product?.description && String(product.description).replace(/<[^>]*>?/gm, '').trim());
+              const hasSpec = Array.isArray(product?.attribute_groups) && product.attribute_groups.length > 0;
+              const hasReviews = Number(product?.reviews) > 0;
+
+              const tabs: { key: string; label: string }[] = [];
+              if (hasDescription) tabs.push({ key: 'description', label: 'Description' });
+              if (hasSpec) tabs.push({ key: 'spec', label: 'Specification' });
+              if (hasReviews) tabs.push({ key: 'reviews', label: `Reviews (${product.reviews})` });
+
+              // if no tabs, show description fallback (if any)
+              if (tabs.length === 0) {
+                return hasDescription ? (
+                  <View style={styles.descriptionContainer}>
+                    <Text style={styles.sectionTitle}>Description</Text>
+                    <Text style={styles.description} numberOfLines={descExpanded ? undefined : 5}>
+                      {String(product.description).replace(/<[^>]*>?/gm, '')}
+                    </Text>
+                    <TouchableOpacity onPress={() => setDescExpanded((s) => !s)}>
+                      <Text style={styles.readMore}>{descExpanded ? 'Show less' : 'Read more'}</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : null;
+              }
+
+              return (
+                <View>
+                  <View style={styles.tabsRow}>
+                    {tabs.map((t) => (
+                      <TouchableOpacity
+                        key={t.key}
+                        onPress={() => setActiveTab(t.key)}
+                        style={[styles.tabButton, activeTab === t.key && styles.activeTabButton]}
+                      >
+                        <Text style={[styles.tabLabel, activeTab === t.key && styles.activeTabLabel]}>{t.label}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  <View style={styles.tabContent}>
+                    {activeTab === 'description' && hasDescription && (
+                      <View style={styles.descriptionContainer}>
+                        <Text style={styles.description} numberOfLines={descExpanded ? undefined : 5}>
+                          {String(product.description).replace(/<[^>]*>?/gm, '')}
+                        </Text>
+                        <TouchableOpacity onPress={() => setDescExpanded((s) => !s)}>
+                          <Text style={styles.readMore}>{descExpanded ? 'Show less' : 'Read more'}</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+
+                    {activeTab === 'spec' && hasSpec && (
+                      <View style={styles.specContainer}>
+                        {product.attribute_groups.map((group: any, gi: number) => (
+                          <View key={gi} style={styles.specGroup}>
+                            <Text style={styles.specGroupTitle}>{group.name}</Text>
+                            {Array.isArray(group.attribute) && group.attribute.map((attr: any, ai: number) => (
+                              <View key={ai} style={styles.specRow}>
+                                <Text style={styles.specName}>{attr.name}</Text>
+                                <Text style={styles.specValue}>{attr.text}</Text>
+                              </View>
+                            ))}
+                          </View>
+                        ))}
+                      </View>
+                    )}
+
+                    {activeTab === 'reviews' && hasReviews && (
+                      <View style={styles.reviewsContainer}>
+                        <Text style={styles.sectionTitle}>Reviews ({product.reviews})</Text>
+                        {/* Minimal reviews placeholder: if you have review objects, render them here */}
+                        <Text style={styles.description}>No detailed reviews available.</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              );
+            })()}
+
+            {/* Related products */}
+            {Array.isArray(product?.related) && product.related.length > 0 ? (
+              <View style={styles.relatedContainer}>
+                <Text style={styles.sectionTitle}>Related Products</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.relatedScroll}>
+                  {product.related.map((r: any) => (
+                    <ProductCard
+                      key={String(r.id)}
+                      product={{
+                        id: String(r.id),
+                        name: r.name,
+                        price: r.price,
+                        special: r.special,
+                        image: r.image,
+                        options: r.options,
+                      }}
+                      containerStyle={{ width: 220, marginRight: 12 }}
+                      imageStyle={{ height: 150 }}
+                      onPress={() => navigation.navigate('Product', { product_id: String(r.id) })}
+                    />
+                  ))}
+                </ScrollView>
+              </View>
+            ) : null}
+          </View>
+        </ScrollView>
+
+        {/* Bottom Bar */}
+        <View style={[styles.bottomBar, { paddingBottom: insets.bottom }]}>
+          <View style={styles.priceContainer}>
+            <Text style={styles.priceLabel}>Total price</Text>
+            { (product?.special || product?.price) ? (
+              <View style={styles.priceRow}>
+                <Text style={styles.price}>{product?.special ?? product?.price}</Text>
+                {product?.special && product?.price ? (
+                  <Text style={styles.oldPrice}>{product.price}</Text>
+                ) : null}
+              </View>
+            ) : null }
+
+            {taxValue > 0 ? (
+              <Text style={styles.tax}>Ex Tax: {product.tax}</Text>
+            ) : null}
+
+            {rewardPointsValue > 0 ? (
+              <Text style={styles.tax}>Price in reward points: {product?.points ?? product?.reward_points ?? product?.reward}</Text>
+            ) : null}
+          </View>
+          <TouchableOpacity 
+            style={styles.addButton}
+            onPress={() => {
+              const optionsComponent = productOptionsRef.current;
+              if (optionsComponent && optionsComponent.validateOptions()) {
+                // All required options are valid, proceed with adding to cart
+                // Add your cart logic here
+                console.log('Adding to cart:', {
+                  product_id,
+                  quantity,
+                  options: selectedOptions
+                });
+              } else {
+                // Show error message
+                Alert.alert('Required Options', 'Please select all required options');
+              }
+            }}
+          >
+            <Ionicons name="bag-outline" size={20} color="#FFF" />
+            <Text style={styles.addButtonText}>Add to bag</Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.addButton}>
-          <Ionicons name="bag-outline" size={20} color="#FFF" />
-          <Text style={styles.addButtonText}>Add to bag</Text>
-        </TouchableOpacity>
-      </View>
       </View>
     </SafeAreaView>
   );
@@ -159,6 +420,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFF',
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   contentContainer: {
     flex: 1,
@@ -197,12 +463,13 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#FFF',
+    backgroundColor: '#FF6B3E',
     marginHorizontal: 4,
-    opacity: 0.5,
+    opacity: 0.4,
   },
   activeDot: {
     opacity: 1,
+    backgroundColor: '#FF6B3E',
   },
   infoContainer: {
     padding: 16,
@@ -218,10 +485,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     flex: 1,
     marginRight: 16,
+    color: '#0F172A',
+    letterSpacing: 0.2,
   },
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 24,
     paddingBottom: 16,
     borderBottomWidth: 1,
@@ -267,6 +537,34 @@ const styles = StyleSheet.create({
   descriptionContainer: {
     marginBottom: 24,
   },
+  tabsRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+    marginBottom: 12,
+  },
+  tabButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginRight: 8,
+    borderRadius: 8,
+  },
+  activeTabButton: {
+    backgroundColor: '#FFF',
+    borderBottomWidth: 2,
+    borderBottomColor: '#000',
+  },
+  tabLabel: {
+    fontSize: 15,
+    color: '#6B7280',
+  },
+  activeTabLabel: {
+    color: '#000',
+    fontWeight: '600',
+  },
+  tabContent: {
+    marginBottom: 20,
+  },
   description: {
     fontSize: 16,
     color: '#666',
@@ -276,6 +574,14 @@ const styles = StyleSheet.create({
   readMore: {
     color: '#FF6B3E',
     fontSize: 16,
+  },
+  relatedContainer: {
+    marginTop: 16,
+    paddingLeft: 8,
+  },
+  relatedScroll: {
+    paddingVertical: 8,
+    paddingRight: 16,
   },
   bottomBar: {
     flexDirection: 'row',
@@ -293,6 +599,22 @@ const styles = StyleSheet.create({
   priceLabel: {
     fontSize: 14,
     color: '#666',
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  oldPrice: {
+    fontSize: 14,
+    color: '#9CA3AF',
+    textDecorationLine: 'line-through',
+    marginLeft: 8,
+  },
+  tax: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginTop: 6,
   },
   price: {
     fontSize: 24,
@@ -312,6 +634,86 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
+  },
+  metaContainer: {
+    marginTop: 12,
+    marginHorizontal: 4,
+    backgroundColor: '#FAFAFB',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    // subtle border/shadow
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  metaLabel: {
+    color: '#6B7280',
+    fontSize: 13,
+    width: 140,
+    fontWeight: '500',
+  },
+  metaValue: {
+    color: '#0F172A',
+    fontSize: 15,
+    fontWeight: '700',
+    flex: 1,
+  },
+  thumbsContainer: {
+    marginTop: 12,
+  },
+  specContainer: {
+    paddingVertical: 6,
+  },
+  specGroup: {
+    marginBottom: 12,
+  },
+  specGroupTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  specRow: {
+    flexDirection: 'row',
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  specName: {
+    width: 140,
+    color: '#6B7280',
+  },
+  specValue: {
+    flex: 1,
+    color: '#0F172A',
+  },
+  reviewsContainer: {
+    marginBottom: 16,
+  },
+  thumbsScroll: {
+    paddingHorizontal: 12,
+    alignItems: 'center',
+  },
+  thumbButton: {
+    marginRight: 8,
+    borderRadius: 6,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  activeThumb: {
+    borderColor: '#FF6B3E',
+  },
+  thumbImage: {
+    width: 72,
+    height: 72,
+    resizeMode: 'cover',
   },
 });
 

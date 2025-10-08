@@ -2,10 +2,10 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import HomeScreen from '../screens/home/HomeScreen';
-import CategoryScreen from '../screens/category/CategoryScreen';
 import WishlistScreen from '../screens/wishlist/WishlistScreen';
 import CartScreen from '../screens/cart/CartScreen';
 import ProfileStack from './ProfileStack';
+import CategoryStack from './CategoryStack';
 
 const Tab = createBottomTabNavigator();
 
@@ -42,7 +42,7 @@ const BottomTabs = () => {
       />
       <Tab.Screen 
         name="CategoryTab" 
-        component={CategoryScreen}
+        component={CategoryStack}
         options={{ title: 'Category' }}
       />
       <Tab.Screen 
