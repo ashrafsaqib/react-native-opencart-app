@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -14,6 +14,7 @@ interface Product {
   price: string;
   sizes: string[];
   image: string;
+  date_added?: string;
 }
 
 interface PropsProducts {
@@ -23,11 +24,19 @@ interface PropsProducts {
     image?: string;
     price?: string;
     special?: string | null;
+    date_added?: string;
   }>;
   title?: string;
 }
 
 const Products = ({ products, title = 'Popular' }: PropsProducts) => {
+  const [selectedSort, setSelectedSort] = useState('Newest');
+  const sortOptions = ['Newest', 'Price High', 'Price Low'];
+
+  const parsePrice = (priceString: string): number => {
+    return parseFloat(priceString.replace(/[^0-9.-]+/g, ''));
+  };
+
   const productsData: Product[] = (products && products.length)
     ? products.map((p, idx) => ({
         id: p.id ?? `${idx}`,
@@ -35,8 +44,36 @@ const Products = ({ products, title = 'Popular' }: PropsProducts) => {
         price: p.special ?? p.price ?? '$0',
         sizes: [],
         image: p.image ?? 'https://via.placeholder.com/250',
+        date_added: p.date_added,
       }))
     : [];
+
+  const sortedProducts = useMemo(() => {
+    const productsToSort = [...productsData];
+    switch (selectedSort) {
+      case 'Price High':
+        return productsToSort.sort((a, b) => {
+          const priceA = parsePrice(a.price);
+          const priceB = parsePrice(b.price);
+          return priceB - priceA;
+        });
+      case 'Price Low':
+        return productsToSort.sort((a, b) => {
+          const priceA = parsePrice(a.price);
+          const priceB = parsePrice(b.price);
+          return priceA - priceB;
+        });
+      case 'Newest':
+        return productsToSort.sort((a, b) => {
+          const dateA = a.date_added ? new Date(a.date_added).getTime() : 0;
+          const dateB = b.date_added ? new Date(b.date_added).getTime() : 0;
+          return dateB - dateA;
+        });
+      default:
+        return productsToSort;
+    }
+  }, [productsData, selectedSort]);
+
   const navigation = useNavigation<ProductsNavigationProp>();
 
   const renderProduct = ({ item }: { item: Product }) => (
@@ -85,15 +122,21 @@ const Products = ({ products, title = 'Popular' }: PropsProducts) => {
       <View style={styles.header}>
         <Text style={styles.title}>{title}</Text>
         <View style={styles.sortContainer}>
-          <Text style={styles.sortLabel}>Newest</Text>
+          <TouchableOpacity onPress={() => setSelectedSort('Newest')}>
+            <Text style={[styles.sortLabel, selectedSort === 'Newest' && styles.activeSortLabel]}>Newest</Text>
+          </TouchableOpacity>
           <View style={styles.divider} />
-          <Text style={styles.sortLabel}>Highest</Text>
+          <TouchableOpacity onPress={() => setSelectedSort('Price High')}>
+            <Text style={[styles.sortLabel, selectedSort === 'Price High' && styles.activeSortLabel]}>Highest</Text>
+          </TouchableOpacity>
           <View style={styles.divider} />
-          <Text style={styles.sortLabel}>Lowest</Text>
+          <TouchableOpacity onPress={() => setSelectedSort('Price Low')}>
+            <Text style={[styles.sortLabel, selectedSort === 'Price Low' && styles.activeSortLabel]}>Lowest</Text>
+          </TouchableOpacity>
         </View>
       </View>
       <FlatList
-        data={productsData}
+        data={sortedProducts}
         renderItem={renderProduct}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
@@ -125,6 +168,10 @@ const styles = StyleSheet.create({
   sortLabel: {
     fontSize: 14,
     color: '#666',
+  },
+  activeSortLabel: {
+    color: '#FF6B3E',
+    fontWeight: 'bold',
   },
   divider: {
     width: 1,

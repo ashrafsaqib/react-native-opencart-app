@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,17 @@ import {
   FlatList,
   Image,
   ActivityIndicator,
+  TextInput,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import ProductCard from '../../components/ProductCard';
 import SafeScreen from '../../components/SafeScreen';
-import { useNavigation, useRoute, RouteProp, CompositeNavigationProp } from '@react-navigation/native';
+import {
+  useNavigation,
+  useRoute,
+  RouteProp,
+  CompositeNavigationProp,
+} from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../App';
 import { BASE_URL } from '../../../config';
@@ -31,6 +37,7 @@ interface Product {
   special?: string;
   image: string;
   options?: boolean;
+  date_added?: string;
 }
 
 interface Category {
@@ -42,7 +49,7 @@ interface Category {
 const CategoryScreen = () => {
   const navigation = useNavigation<CategoryScreenNavigationProp>();
   const route = useRoute<CategoryScreenRouteProp>();
-  const { category_id } = route.params || {};
+  const { category_id, searchQuery: searchQueryParam } = route.params || {};
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,40 +62,147 @@ const CategoryScreen = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedSort, setSelectedSort] = useState('Newest');
   const sortOptions = ['Newest', 'Price High', 'Price Low'];
+  const [searchedProducts, setSearchedProducts] = useState<Product[]>([]);
+  const [isSearchActive, setIsSearchActive] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const parsePrice = (priceString: string): number => {
+    return parseFloat(priceString.replace(/[^0-9.-]+/g, ''));
+  };
+
+  const sortedProducts = useMemo(() => {
+    const productsToSort = [...products];
+    switch (selectedSort) {
+      case 'Price High':
+        return productsToSort.sort((a, b) => {
+          const priceA = a.special ? parsePrice(a.special) : parsePrice(a.price);
+          const priceB = b.special ? parsePrice(b.special) : parsePrice(b.price);
+          return priceB - priceA;
+        });
+      case 'Price Low':
+        return productsToSort.sort((a, b) => {
+          const priceA = a.special ? parsePrice(a.special) : parsePrice(a.price);
+          const priceB = b.special ? parsePrice(b.special) : parsePrice(b.price);
+          return priceA - priceB;
+        });
+      case 'Newest':
+        return productsToSort.sort((a, b) => {
+          const dateA = a.date_added ? new Date(a.date_added).getTime() : 0;
+          const dateB = b.date_added ? new Date(b.date_added).getTime() : 0;
+          return dateB - dateA;
+        });
+      default:
+        return productsToSort;
+    }
+  }, [products, selectedSort]);
+
+  const sortedSearchedProducts = useMemo(() => {
+    const productsToSort = [...searchedProducts];
+    switch (selectedSort) {
+      case 'Price High':
+        return productsToSort.sort((a, b) => {
+          const priceA = a.special ? parsePrice(a.special) : parsePrice(a.price);
+          const priceB = b.special ? parsePrice(b.special) : parsePrice(b.price);
+          return priceB - priceA;
+        });
+      case 'Price Low':
+        return productsToSort.sort((a, b) => {
+          const priceA = a.special ? parsePrice(a.special) : parsePrice(a.price);
+          const priceB = b.special ? parsePrice(b.special) : parsePrice(b.price);
+          return priceA - priceB;
+        });
+      case 'Newest':
+        return productsToSort.sort((a, b) => {
+          const dateA = a.date_added ? new Date(a.date_added).getTime() : 0;
+          const dateB = b.date_added ? new Date(b.date_added).getTime() : 0;
+          return dateB - dateA;
+        });
+      default:
+        return productsToSort;
+    }
+  }, [searchedProducts, selectedSort]);
+
+  const fetchCategoryData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      let url = '';
+      if (category_id) {
+        url = `${BASE_URL}.getCategoryView&category_id=${category_id}`;
+      } else {
+        url = `${BASE_URL}.getCategories`;
+      }
+
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+
+      if (category_id) {
+        setDescription(json.description || '');
+        setCategories(json.subcategories || []);
+        setProducts(json.products || []);
+      } else {
+        setCategories(json.categories || []);
+        setProducts([]);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch data');
+    } finally {
+      setLoading(false);
+    }
+  }, [category_id]);
+
+  const handleSearch = async (query: string) => {
+    setSearchQuery(query);
+    if (!query) {
+      setIsSearchActive(false);
+      setSearchedProducts([]);
+      fetchCategoryData();
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      setIsSearchActive(true);
+
+      const res = await fetch(`${BASE_URL}.searchProducts&name=${query}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+
+      setSearchedProducts(json.products || []);
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch search data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    setIsSearchActive(false);
+    setSearchedProducts([]);
+    fetchCategoryData();
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        let url = '';
-        if (category_id) {
-          url = `${BASE_URL}.getCategoryView&category_id=${category_id}`;
-        } else {
-          url = `${BASE_URL}.getCategories`;
-        }
+    if (searchQueryParam) {
+      handleSearch(searchQueryParam);
+      navigation.setParams({ searchQuery: undefined });
+    } else {
+      fetchCategoryData();
+    }
+  }, [searchQueryParam, fetchCategoryData, navigation]);
 
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json();
-
-        if (category_id) {
-          setDescription(json.description || '');
-          setCategories(json.subcategories || []);
-          setProducts(json.products || []);
-        } else {
-          setCategories(json.categories || []);
-          setProducts([]);
-        }
-      } catch (err: any) {
-        setError(err.message || 'Failed to fetch data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [category_id]);
+  const getHeaderTitle = () => {
+    if (isSearchActive) {
+      return 'Search Result';
+    }
+    if (category_id) {
+      return 'Category';
+    }
+    return 'All Categories';
+  };
 
   const renderProduct = ({ item }: { item: Product }) => (
     <ProductCard
@@ -124,7 +238,7 @@ const CategoryScreen = () => {
   };
 
   const ListHeader = () => {
-    if (!category_id) return null;
+    if (!category_id || isSearchActive) return null;
 
     const numColumns = 3;
     const formattedCategories = [...categories];
@@ -175,32 +289,36 @@ const CategoryScreen = () => {
           </View>
         )}
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.sortBar}
-          contentContainerStyle={styles.sortBarContent}>
-          {sortOptions.map((option) => (
-            <TouchableOpacity
-              key={option}
-              style={[
-                styles.sortOption,
-                selectedSort === option && styles.selectedSort,
-              ]}
-              onPress={() => setSelectedSort(option)}>
-              <Text
-                style={[
-                  styles.sortOptionText,
-                  selectedSort === option && styles.selectedSortText,
-                ]}>
-                {option}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+        <SortBar />
       </>
     );
   };
+
+  const SortBar = () => (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.sortBar}
+      contentContainerStyle={styles.sortBarContent}>
+      {sortOptions.map((option) => (
+        <TouchableOpacity
+          key={option}
+          style={[
+            styles.sortOption,
+            selectedSort === option && styles.selectedSort,
+          ]}
+          onPress={() => setSelectedSort(option)}>
+          <Text
+            style={[
+              styles.sortOptionText,
+              selectedSort === option && styles.selectedSortText,
+            ]}>
+            {option}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
+  );
 
   if (loading) {
     return (
@@ -228,67 +346,114 @@ const CategoryScreen = () => {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          {category_id ? 'Category' : 'All Categories'}
-        </Text>
-        <TouchableOpacity>
-          <Ionicons name="options-outline" size={24} color="#000" />
+        <Text style={styles.headerTitle}>{getHeaderTitle()}</Text>
+        <View style={{ width: 24 }} />
+      </View>
+
+      <View style={styles.searchContainer}>
+        <View style={styles.searchInputWrapper}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="What are you looking for?"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onSubmitEditing={() => handleSearch(searchQuery)}
+            returnKeyType="search"
+          />
+          {searchQuery ? (
+            <TouchableOpacity onPress={handleClearSearch} style={styles.clearButton}>
+              <Ionicons name="close-circle" size={20} color="#999" />
+            </TouchableOpacity>
+          ) : null}
+        </View>
+        <TouchableOpacity onPress={() => handleSearch(searchQuery)} style={styles.searchButton}>
+          <Ionicons name="search" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
 
-      {products.length > 0 ? (
-        <FlatList
-          data={products}
-          renderItem={renderProduct}
-          keyExtractor={(item) => item.id}
-          numColumns={2}
-          ListHeaderComponent={ListHeader}
-          columnWrapperStyle={styles.productRow}
-          contentContainerStyle={styles.productList}
-          showsVerticalScrollIndicator={false}
-        />
+      {isSearchActive ? (
+        searchedProducts.length > 0 ? (
+          <FlatList
+            data={sortedSearchedProducts}
+            renderItem={renderProduct}
+            keyExtractor={(item) => item.id}
+            numColumns={2}
+            ListHeaderComponent={SortBar}
+            columnWrapperStyle={styles.productRow}
+            contentContainerStyle={styles.productList}
+            showsVerticalScrollIndicator={false}
+          />
+        ) : (
+          <View style={styles.centered}>
+            <Text>No related product found.</Text>
+            <Text style={styles.categoryTitle}>All Categories</Text>
+            <FlatList
+              data={categories}
+              renderItem={renderCategory}
+              keyExtractor={(item) => item.id}
+              numColumns={3}
+              columnWrapperStyle={{ justifyContent: 'space-between' }}
+              contentContainerStyle={styles.categoryList}
+            />
+          </View>
+        )
       ) : (
         <>
-          {description ? (
-            <View style={styles.descriptionContainer}>
-              <Text
-                style={styles.descriptionText}
-                numberOfLines={descExpanded ? undefined : descMeasured ? 2 : undefined}
-                onTextLayout={(e) => {
-                  const lines = e.nativeEvent.lines || [];
-                  if (!descMeasured) {
-                    if (lines.length > 2) setShowDescToggle(true);
-                    setDescMeasured(true);
-                  }
-                }}
-              >
-                {description}
-              </Text>
-              {showDescToggle && (
-                <TouchableOpacity onPress={() => setDescExpanded((s) => !s)}>
-                  <Text style={styles.descriptionToggleText}>
-                    {descExpanded ? 'Show less' : 'Add more...'}
+          {products.length > 0 ? (
+            <FlatList
+              data={sortedProducts}
+              renderItem={renderProduct}
+              keyExtractor={(item) => item.id}
+              numColumns={2}
+              ListHeaderComponent={ListHeader}
+              columnWrapperStyle={styles.productRow}
+              contentContainerStyle={styles.productList}
+              showsVerticalScrollIndicator={false}
+            />
+          ) : (
+            <>
+              {description && !category_id && (
+                <View style={styles.descriptionContainer}>
+                  <Text
+                    style={styles.descriptionText}
+                    numberOfLines={descExpanded ? undefined : descMeasured ? 2 : undefined}
+                    onTextLayout={(e) => {
+                      const lines = e.nativeEvent.lines || [];
+                      if (!descMeasured) {
+                        if (lines.length > 2) setShowDescToggle(true);
+                        setDescMeasured(true);
+                      }
+                    }}
+                  >
+                    {description}
                   </Text>
-                </TouchableOpacity>
+                  {showDescToggle && (
+                    <TouchableOpacity onPress={() => setDescExpanded((s) => !s)}>
+                      <Text style={styles.descriptionToggleText}>
+                        {descExpanded ? 'Show less' : 'Add more...'}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               )}
+
+              <FlatList
+                data={categories}
+                renderItem={renderCategory}
+                keyExtractor={(item) => item.id}
+                numColumns={3}
+                columnWrapperStyle={{ justifyContent: 'space-between' }}
+                contentContainerStyle={styles.categoryList}
+              />
+            </>
+          )}
+          {products.length === 0 && category_id ? (
+            <View style={[styles.centered, styles.emptyOverlay]} pointerEvents="none">
+              <Text style={styles.emptyText}>No products in category</Text>
             </View>
           ) : null}
-
-          <FlatList
-            data={categories}
-            renderItem={renderCategory}
-            keyExtractor={(item) => item.id}
-            numColumns={3}
-            columnWrapperStyle={{ justifyContent: 'space-between' }}
-            contentContainerStyle={styles.categoryList}
-          />
         </>
       )}
-      {products.length === 0 && category_id ? (
-        <View style={[styles.centered, styles.emptyOverlay]} pointerEvents="none">
-          <Text style={styles.emptyText}>No products in category</Text>
-        </View>
-      ) : null}
     </SafeScreen>
   );
 };
@@ -312,6 +477,38 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  searchInputWrapper: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  searchInput: {
+    flex: 1,
+    height: 40,
+    borderColor: '#DDD',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingLeft: 12,
+    paddingRight: 30, // For clear button
+  },
+  clearButton: {
+    position: 'absolute',
+    right: 8,
+  },
+  searchButton: {
+    marginLeft: 8,
+    backgroundColor: '#FF6B3E',
+    padding: 8,
+    borderRadius: 8,
+    height: 40,
+    justifyContent: 'center',
   },
   categoryContainer: {
     paddingVertical: 16,

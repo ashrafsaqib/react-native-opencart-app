@@ -18,8 +18,20 @@ import TrustBadges from '../../components/TrustBadges';
 import SafeScreen from '../../components/SafeScreen';
 import FeatureCategories from '../../components/FeatureCategories';
 import { BASE_URL } from '../../../config';
+import { useNavigation } from '@react-navigation/native';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+
+// This should be in a central types file, but for this example, defined here.
+export type BottomTabsParamList = {
+  HomeTab: undefined;
+  CategoryTab: { screen: string, params: { searchQuery?: string, category_id?: string } };
+  WishlistTab: undefined;
+  ProfileTab: undefined;
+  CartTab: undefined;
+};
 
 const HomeScreen = () => {
+  const navigation = useNavigation<BottomTabNavigationProp<BottomTabsParamList>>();
   const [data, setData] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,9 +61,18 @@ const HomeScreen = () => {
     setRefreshing(false);
   }, []);
 
+  const handleSearch = (query: string) => {
+    if (query) {
+      navigation.navigate('CategoryTab', {
+        screen: 'Category',
+        params: { searchQuery: query },
+      });
+    }
+  };
+
   return (
     <SafeScreen>
-      <Header />
+      <Header onSearch={handleSearch} />
       {loading ? (
         <View
           style={{

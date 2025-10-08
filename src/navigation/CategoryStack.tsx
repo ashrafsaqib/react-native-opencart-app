@@ -3,7 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import CategoryScreen from '../screens/category/CategoryScreen';
 
 export type CategoryStackParamList = {
-  Category: { category_id?: string };
+  Category: { category_id?: string; searchQuery?: string };
 };
 
 const Stack = createNativeStackNavigator<CategoryStackParamList>();
