@@ -12,8 +12,8 @@ import WishlistButton from './WishlistButton';
 type Product = {
     id?: string;
     name?: string;
-    price?: string | number;
-    special?: string | number;
+    price?: string;
+    special?: string;
     image?: string;
     options?: boolean;
 };
@@ -38,7 +38,11 @@ const ProductCard: React.FC<Props> = ({
     infoStyle,
 }) => {
     const [imageFailed, setImageFailed] = useState(false);
-
+    const parseNumber = (v: any) => {
+        if (v == null) return NaN;
+        const n = Number(String(v).replace(/[^0-9.-]+/g, ''));
+        return Number.isNaN(n) ? NaN : n;
+    };
     return (
         <TouchableOpacity
             style={[styles.gridCard, containerStyle]}
@@ -51,7 +55,8 @@ const ProductCard: React.FC<Props> = ({
                 product={{
                     id: product.id ?? '',
                     name: product.name ?? '',
-                    price: Number(String(product.special ?? product.price).replace(/[^0-9.-]+/g, '')) || 0,
+                    price: product.price ? parseNumber(product.price) : 0,
+                    special: product.special ? parseNumber(product.special) : undefined,
                     image: product.image ?? '',
                 }}
                 size={20}

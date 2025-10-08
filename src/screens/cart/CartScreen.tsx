@@ -11,6 +11,9 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import SafeScreen from '../../components/SafeScreen';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState, AppDispatch } from '../../redux/store';
+import { incrementQuantity, decrementQuantity } from '../../redux/slices/cartSlice';
 
 type RootStackParamList = {
   Home: undefined;
@@ -28,31 +31,22 @@ interface CartItem {
   image: string;
 }
 
-const cartItems: CartItem[] = [
-  {
-    id: '1',
-    name: 'Original Stripe Polo Ralph Lauren - Slim Fit',
-    price: 89,
-    size: 'M',
-    quantity: 1,
-    image: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=500&h=500',
-  },
-  {
-    id: '2',
-    name: 'Training Dri-FIT 2.0 - t-shirt in black',
-    price: 39,
-    size: 'L',
-    quantity: 2,
-    image: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=500&h=500',
-  },
-];
-
 const CartScreen = () => {
   const navigation = useNavigation<CartScreenNavigationProp>();
+  const dispatch = useDispatch<AppDispatch>();
+  const cartItems = useSelector((state: RootState) => state.cart.items);
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shipping = 10;
   const total = subtotal + shipping;
+
+  const handleIncrement = (id: string, size: string) => {
+    dispatch(incrementQuantity({ id, size }));
+  };
+
+  const handleDecrement = (id: string, size: string) => {
+    dispatch(decrementQuantity({ id, size }));
+  };
 
   const renderCartItem = (item: CartItem) => (
     <View key={item.id} style={styles.cartItem}>
@@ -65,11 +59,11 @@ const CartScreen = () => {
         <Text style={styles.itemPrice}>${item.price}</Text>
       </View>
       <View style={styles.quantityControls}>
-        <TouchableOpacity style={styles.quantityButton}>
+        <TouchableOpacity style={styles.quantityButton} onPress={() => handleDecrement(item.id, item.size)}>
           <Ionicons name="remove" size={20} color="#666" />
         </TouchableOpacity>
         <Text style={styles.quantity}>{item.quantity}</Text>
-        <TouchableOpacity style={styles.quantityButton}>
+        <TouchableOpacity style={styles.quantityButton} onPress={() => handleIncrement(item.id, item.size)}>
           <Ionicons name="add" size={20} color="#666" />
         </TouchableOpacity>
       </View>
@@ -87,36 +81,44 @@ const CartScreen = () => {
         <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView style={styles.content}>
-        {/* Cart Items */}
-        <View style={styles.cartItems}>
-          {cartItems.map(renderCartItem)}
+      {cartItems.length === 0 ? (
+        <View style={styles.emptyCartContainer}>
+          <Text style={styles.emptyCartText}>Your cart is empty</Text>
         </View>
+      ) : (
+        <>
+          <ScrollView style={styles.content}>
+            {/* Cart Items */}
+            <View style={styles.cartItems}>
+              {cartItems.map(renderCartItem)}
+            </View>
 
-        {/* Summary */}
-        <View style={styles.summary}>
-          <Text style={styles.summaryTitle}>Order Summary</Text>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Subtotal</Text>
-            <Text style={styles.summaryValue}>${subtotal}</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Shipping</Text>
-            <Text style={styles.summaryValue}>${shipping}</Text>
-          </View>
-          <View style={[styles.summaryRow, styles.totalRow]}>
-            <Text style={styles.totalLabel}>Total</Text>
-            <Text style={styles.totalValue}>${total}</Text>
-          </View>
-        </View>
-      </ScrollView>
+            {/* Summary */}
+            <View style={styles.summary}>
+              <Text style={styles.summaryTitle}>Order Summary</Text>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Subtotal</Text>
+                <Text style={styles.summaryValue}>${subtotal.toFixed(2)}</Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Shipping</Text>
+                <Text style={styles.summaryValue}>${shipping.toFixed(2)}</Text>
+              </View>
+              <View style={[styles.summaryRow, styles.totalRow]}>
+                <Text style={styles.totalLabel}>Total</Text>
+                <Text style={styles.totalValue}>${total.toFixed(2)}</Text>
+              </View>
+            </View>
+          </ScrollView>
 
-      {/* Checkout Button */}
-      <View style={styles.bottomBar}>
-        <TouchableOpacity style={styles.checkoutButton}>
-          <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
-        </TouchableOpacity>
-      </View>
+          {/* Checkout Button */}
+          <View style={styles.bottomBar}>
+            <TouchableOpacity style={styles.checkoutButton}>
+              <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
     </SafeScreen>
   );
 };
@@ -251,6 +253,15 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  emptyCartContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyCartText: {
+    fontSize: 18,
+    color: '#666',
   },
 });
 

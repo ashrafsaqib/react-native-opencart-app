@@ -17,6 +17,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import ProductCard from '../../components/ProductCard';
 import ProductOptions from '../../components/ProductOptions';
+import WishlistButton from '../../components/WishlistButton';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute } from '@react-navigation/native';
 import { BASE_URL } from '../../../config';
@@ -108,7 +109,11 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ navigation }) => {
         const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        setProduct(data);
+        const normalizedProduct = {
+          ...data,
+          id: data.product_id,
+        };
+        setProduct(normalizedProduct);
       } catch (err) {
         console.error('Failed to fetch product details:', err);
         setError('Failed to fetch product details.');
@@ -199,9 +204,15 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ navigation }) => {
           <View style={styles.infoContainer}>
             <View style={styles.titleContainer}>
               <Text style={styles.title}>{product?.name ?? 'Product'}</Text>
-              <TouchableOpacity>
-                <Ionicons name="heart-outline" size={24} color="#000" />
-              </TouchableOpacity>
+              <WishlistButton
+                product={{
+                  id: product_id,
+                  name: product.name,
+                  price: parseNumber(product.price),
+                  special: product.special ? parseNumber(product.special) : undefined,
+                  image: product.image || product.thumb,
+                }}
+              />
             </View>
 
             {/* Product meta: show only when data exists */}
@@ -250,7 +261,7 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ navigation }) => {
             </View>
 
             {/* Product Options (radio, checkbox, select, text, date, time, file, textarea) */}
-            <ProductOptions 
+            <ProductOptions
               options={product?.options ?? product?.product_options ?? []}
               ref={productOptionsRef}
               onChange={(selected, isValid) => {
@@ -372,14 +383,14 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ navigation }) => {
         <View style={[styles.bottomBar, { paddingBottom: insets.bottom }]}>
           <View style={styles.priceContainer}>
             <Text style={styles.priceLabel}>Total price</Text>
-            { (product?.special || product?.price) ? (
+            {(product?.special || product?.price) ? (
               <View style={styles.priceRow}>
                 <Text style={styles.price}>{product?.special ?? product?.price}</Text>
                 {product?.special && product?.price ? (
                   <Text style={styles.oldPrice}>{product.price}</Text>
                 ) : null}
               </View>
-            ) : null }
+            ) : null}
 
             {taxValue > 0 ? (
               <Text style={styles.tax}>Ex Tax: {product.tax}</Text>
@@ -389,7 +400,7 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ navigation }) => {
               <Text style={styles.tax}>Price in reward points: {product?.points ?? product?.reward_points ?? product?.reward}</Text>
             ) : null}
           </View>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.addButton}
             onPress={() => {
               const optionsComponent = productOptionsRef.current;

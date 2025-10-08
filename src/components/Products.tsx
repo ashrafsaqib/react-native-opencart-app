@@ -12,6 +12,7 @@ interface Product {
   id: string;
   name: string;
   price: string;
+  special?: string;
   sizes: string[];
   image: string;
   date_added?: string;
@@ -33,19 +34,22 @@ const Products = ({ products, title = 'Popular' }: PropsProducts) => {
   const [selectedSort, setSelectedSort] = useState('Newest');
   const sortOptions = ['Newest', 'Price High', 'Price Low'];
 
-  const parsePrice = (priceString: string): number => {
-    return parseFloat(priceString.replace(/[^0-9.-]+/g, ''));
+  const parseNumber = (v: any) => {
+    if (v == null) return NaN;
+    const n = Number(String(v).replace(/[^0-9.-]+/g, ''));
+    return Number.isNaN(n) ? NaN : n;
   };
 
   const productsData: Product[] = (products && products.length)
     ? products.map((p, idx) => ({
-        id: p.id ?? `${idx}`,
-        name: p.name ?? 'Product',
-        price: p.special ?? p.price ?? '$0',
-        sizes: [],
-        image: p.image ?? 'https://via.placeholder.com/250',
-        date_added: p.date_added,
-      }))
+      id: p.id ?? `${idx}`,
+      name: p.name ?? 'Product',
+      price: p.price ?? '$0',
+      special: p.special ?? undefined,
+      sizes: [],
+      image: p.image ?? 'https://via.placeholder.com/250',
+      date_added: p.date_added,
+    }))
     : [];
 
   const sortedProducts = useMemo(() => {
@@ -53,14 +57,14 @@ const Products = ({ products, title = 'Popular' }: PropsProducts) => {
     switch (selectedSort) {
       case 'Price High':
         return productsToSort.sort((a, b) => {
-          const priceA = parsePrice(a.price);
-          const priceB = parsePrice(b.price);
+          const priceA = a.special ? parseNumber(a.special) : parseNumber(a.price);
+          const priceB = b.special ? parseNumber(b.special) : parseNumber(b.price);
           return priceB - priceA;
         });
       case 'Price Low':
         return productsToSort.sort((a, b) => {
-          const priceA = parsePrice(a.price);
-          const priceB = parsePrice(b.price);
+          const priceA = a.special ? parseNumber(a.special) : parseNumber(a.price);
+          const priceB = b.special ? parseNumber(b.special) : parseNumber(b.price);
           return priceA - priceB;
         });
       case 'Newest':
@@ -90,19 +94,23 @@ const Products = ({ products, title = 'Popular' }: PropsProducts) => {
           ))}
         </View>
         <View style={styles.actionsContainer}>
-          <Text style={styles.price}>{item.price}</Text>
+          <View style={styles.priceContainer}>
+            <Text style={styles.price}>{item.special ?? item.price}</Text>
+            {item.special && <Text style={styles.originalPrice}>{item.price}</Text>}
+          </View>
           <View style={styles.buttonGroup}>
             <WishlistButton
               product={{
-                id: item.id,
-                name: item.name,
-                price: parseFloat(item.price.replace('$', '')),
-                image: item.image
+                id: item.id ?? '',
+                name: item.name ?? '',
+                price: item.price ? parseNumber(item.price) : 0,
+                special: item.special ? parseNumber(item.special) : undefined,
+                image: item.image ?? '',
               }}
               size={20}
               style={styles.wishlistButton}
             />
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.cartButton}
               onPress={(e) => {
                 e.stopPropagation();
@@ -238,6 +246,16 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#FF6B3E',
+  },
+  originalPrice: {
+    fontSize: 14,
+    color: '#999',
+    textDecorationLine: 'line-through',
+    marginRight: 8,
+  },
+  priceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   cartButton: {
     width: 36,
