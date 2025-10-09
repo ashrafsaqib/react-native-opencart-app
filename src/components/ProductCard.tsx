@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import WishlistButton from './WishlistButton';
+import CartButton from './CartButton';
 
 type Product = {
     id?: string;
@@ -21,7 +22,6 @@ type Product = {
 type Props = {
     product: Product;
     onPress?: () => void;
-    onAdd?: () => void;
     badge?: React.ReactNode;
     containerStyle?: any;
     imageStyle?: any;
@@ -31,7 +31,6 @@ type Props = {
 const ProductCard: React.FC<Props> = ({
     product,
     onPress,
-    onAdd,
     badge,
     containerStyle,
     imageStyle,
@@ -85,16 +84,18 @@ const ProductCard: React.FC<Props> = ({
                         <Text style={styles.price}>{product.special ?? product.price}</Text>
                         {product.special && <Text style={styles.oldPrice}>{product.price}</Text>}
                     </View>
-                    <TouchableOpacity
-                        style={styles.cartButton}
-                        onPress={(e: any) => {
-                            // prevent parent TouchableOpacity from triggering
-                            if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
-                            onAdd && onAdd();
+                    <CartButton
+                        product={{
+                            id: product.id ?? '',
+                            name: product.name ?? '',
+                            price: product.price ? parseNumber(product.price) : 0,
+                            image: product.image ?? '',
+                            special: product.special ? parseNumber(product.special) : undefined,
+                            options: product.options,
                         }}
-                    >
-                        <Ionicons name="cart-outline" size={20} color="#FF6B3E" />
-                    </TouchableOpacity>
+                        size={20}
+                        style={styles.cartButton}
+                    />
                 </View>
             </View>
         </TouchableOpacity>
@@ -168,8 +169,6 @@ const styles = StyleSheet.create({
     cartButton: {
         width: 36,
         height: 36,
-        borderRadius: 18,
-        backgroundColor: '#FFF0EC',
         justifyContent: 'center',
         alignItems: 'center',
     },

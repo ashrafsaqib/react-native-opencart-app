@@ -28,7 +28,6 @@ const ProductOptions = React.forwardRef<{ validateOptions: () => boolean }, Prod
   const [errors, setErrors] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    console.log('ProductOptions options:', options);
   }, [options]);
 
   useEffect(() => {
@@ -234,7 +233,7 @@ const ProductOptions = React.forwardRef<{ validateOptions: () => boolean }, Prod
                     style={[styles.valueButton, isSelected && styles.valueButtonActive]}
                     onPress={() => chooseSingle(opt.product_option_id || opt.option_id, String(val.product_option_value_id))}
                   >
-                    <Text style={[styles.valueLabel, isSelected && styles.valueLabelActive]}>{val.name}{val.price ? ` (${val.price})` : ''}</Text>
+                    <Text style={[styles.valueLabel, isSelected && styles.valueLabelActive]}>{val.name}{val.price ? ` (${val.price_prefix}${val.price})` : ''}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -255,7 +254,7 @@ const ProductOptions = React.forwardRef<{ validateOptions: () => boolean }, Prod
                     <View style={[styles.checkbox, isSelected && styles.checkboxActive]}>
                       {isSelected && <Ionicons name="checkmark" size={14} color="#FFF" />}
                     </View>
-                    <Text style={styles.valueLabel}>{val.name}{val.price ? ` (${val.price})` : ''}</Text>
+                    <Text style={styles.valueLabel}>{val.name}{val.price ? ` (${val.price_prefix}${val.price})` : ''}</Text>
                   </TouchableOpacity>
                 );
               })}

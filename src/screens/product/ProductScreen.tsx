@@ -20,6 +20,9 @@ import ProductOptions from '../../components/ProductOptions';
 import WishlistButton from '../../components/WishlistButton';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute } from '@react-navigation/native';
+import { useDispatch } from 'react-redux';
+import { addToCart, CartItemOption } from '../../redux/slices/cartSlice';
+import Toast from 'react-native-toast-message';
 import { BASE_URL } from '../../../config';
 
 type RootStackParamList = {
@@ -38,6 +41,7 @@ interface ProductScreenProps {
 
 const ProductScreen: React.FC<ProductScreenProps> = ({ navigation }) => {
   const route = useRoute();
+  const dispatch = useDispatch();
   const { product_id } = route.params as { product_id: string };
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -100,6 +104,62 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ navigation }) => {
     const n = parseNumber(product?.tax);
     return Number.isNaN(n) ? 0 : n;
   }, [product]);
+
+  const uniqueRelatedProducts = useMemo(() => {
+    if (!Array.isArray(product?.related)) {
+      return [];
+    }
+    const unique = product.related.reduce((acc: any[], current: any) => {
+      if (current && current.id && !acc.find((item: any) => item.id === current.id)) {
+        acc.push(current);
+      }
+      return acc;
+    }, []);
+    return unique;
+  }, [product?.related]);
+
+  const getFormattedOptions = (selected: Record<string, any>, productOptions: any[]): CartItemOption[] => {
+    const formatted: CartItemOption[] = [];
+    productOptions.forEach(opt => {
+      const selectedValue = selected[opt.product_option_id];
+      if (selectedValue) {
+        if (['radio', 'select'].includes(opt.type)) {
+          const optionValue = opt.product_option_value.find((val: any) => String(val.product_option_value_id) === String(selectedValue));
+          if (optionValue) {
+            formatted.push({
+              optionId: String(opt.product_option_id),
+              optionName: opt.name,
+              optionValue: optionValue.name,
+              optionValueId: String(optionValue.product_option_value_id),
+              price: optionValue.price ? parseNumber(optionValue.price) : undefined,
+              pricePrefix: optionValue.price_prefix,
+            });
+          }
+        } else if (opt.type === 'checkbox') {
+          const selectedValues = Array.isArray(selectedValue) ? selectedValue : [selectedValue];
+          opt.product_option_value
+            .filter((val: any) => selectedValues.includes(String(val.product_option_value_id)))
+            .forEach((val: any) => {
+              formatted.push({
+                optionId: String(opt.product_option_id),
+                optionName: opt.name,
+                optionValue: val.name,
+                optionValueId: String(val.product_option_value_id),
+                price: val.price ? parseNumber(val.price) : undefined,
+                pricePrefix: val.price_prefix,
+              });
+            });
+        } else {
+          formatted.push({
+            optionId: String(opt.product_option_id),
+            optionName: opt.name,
+            optionValue: String(selectedValue),
+          });
+        }
+      }
+    });
+    return formatted;
+  };
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -187,9 +247,9 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ navigation }) => {
             />
 
             <View style={styles.imageDots}>
-              {images.map((_, index) => (
+              {images.map((item, index) => (
                 <TouchableOpacity
-                  key={index}
+                  key={item + '-' + index}
                   onPress={() => {
                     flatListRef.current?.scrollToIndex({ index, animated: true });
                     setCurrentImageIndex(index);
@@ -327,10 +387,10 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ navigation }) => {
                     {activeTab === 'spec' && hasSpec && (
                       <View style={styles.specContainer}>
                         {product.attribute_groups.map((group: any, gi: number) => (
-                          <View key={gi} style={styles.specGroup}>
+                          <View key={group.name + '-' + gi} style={styles.specGroup}>
                             <Text style={styles.specGroupTitle}>{group.name}</Text>
                             {Array.isArray(group.attribute) && group.attribute.map((attr: any, ai: number) => (
-                              <View key={ai} style={styles.specRow}>
+                              <View key={attr.name + '-' + ai} style={styles.specRow}>
                                 <Text style={styles.specName}>{attr.name}</Text>
                                 <Text style={styles.specValue}>{attr.text}</Text>
                               </View>
@@ -353,15 +413,15 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ navigation }) => {
             })()}
 
             {/* Related products */}
-            {Array.isArray(product?.related) && product.related.length > 0 ? (
+            {uniqueRelatedProducts.length > 0 ? (
               <View style={styles.relatedContainer}>
                 <Text style={styles.sectionTitle}>Related Products</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.relatedScroll}>
-                  {product.related.map((r: any) => (
+                  {uniqueRelatedProducts.map((r: any) => (
                     <ProductCard
-                      key={String(r.id)}
+                      key={r.id}
                       product={{
-                        id: String(r.id),
+                        id: r.id,
                         name: r.name,
                         price: r.price,
                         special: r.special,
@@ -370,7 +430,7 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ navigation }) => {
                       }}
                       containerStyle={{ width: 220, marginRight: 12 }}
                       imageStyle={{ height: 150 }}
-                      onPress={() => navigation.navigate('Product', { product_id: String(r.id) })}
+                      onPress={() => navigation.navigate('Product', { product_id: r.id })}
                     />
                   ))}
                 </ScrollView>
@@ -405,15 +465,24 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ navigation }) => {
             onPress={() => {
               const optionsComponent = productOptionsRef.current;
               if (optionsComponent && optionsComponent.validateOptions()) {
-                // All required options are valid, proceed with adding to cart
-                // Add your cart logic here
-                console.log('Adding to cart:', {
-                  product_id,
-                  quantity,
-                  options: selectedOptions
+                const formattedOptions = getFormattedOptions(selectedOptions, product?.options ?? product?.product_options ?? []);
+                const cartPayload = {
+                  id: product_id,
+                  name: product.name,
+                  basePrice: parseNumber(product.price),
+                  specialPrice: product.special ? parseNumber(product.special) : undefined,
+                  image: product.image || product.thumb,
+                  options: formattedOptions,
+                  quantityToAdd: quantity,
+                };
+                console.log('cartPayload',cartPayload);
+                dispatch(addToCart(cartPayload));
+                Toast.show({
+                  type: 'simple',
+                  text1: 'Added to cart',
+                  text2: `${product.name} has been added to your cart.`,
                 });
               } else {
-                // Show error message
                 Alert.alert('Required Options', 'Please select all required options');
               }
             }}

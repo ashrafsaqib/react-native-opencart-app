@@ -13,7 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../../redux/store';
-import { incrementQuantity, decrementQuantity } from '../../redux/slices/cartSlice';
+import { incrementQuantity, decrementQuantity, CartItemOption } from '../../redux/slices/cartSlice';
 
 type RootStackParamList = {
   Home: undefined;
@@ -22,53 +22,22 @@ type RootStackParamList = {
 
 type CartScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Cart'>;
 
-interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  size: string;
-  quantity: number;
-  image: string;
-}
 
 const CartScreen = () => {
   const navigation = useNavigation<CartScreenNavigationProp>();
   const dispatch = useDispatch<AppDispatch>();
   const cartItems = useSelector((state: RootState) => state.cart.items);
-
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shipping = 10;
   const total = subtotal + shipping;
 
-  const handleIncrement = (id: string, size: string) => {
-    dispatch(incrementQuantity({ id, size }));
+  const handleIncrement = (id: string, options: CartItemOption[]) => {
+    dispatch(incrementQuantity({ id, options }));
   };
 
-  const handleDecrement = (id: string, size: string) => {
-    dispatch(decrementQuantity({ id, size }));
+  const handleDecrement = (id: string, options: CartItemOption[]) => {
+    dispatch(decrementQuantity({ id, options }));
   };
-
-  const renderCartItem = (item: CartItem) => (
-    <View key={item.id} style={styles.cartItem}>
-      <Image source={{ uri: item.image }} style={styles.itemImage} />
-      <View style={styles.itemInfo}>
-        <Text style={styles.itemName} numberOfLines={2}>
-          {item.name}
-        </Text>
-        <Text style={styles.itemSize}>Size: {item.size}</Text>
-        <Text style={styles.itemPrice}>${item.price}</Text>
-      </View>
-      <View style={styles.quantityControls}>
-        <TouchableOpacity style={styles.quantityButton} onPress={() => handleDecrement(item.id, item.size)}>
-          <Ionicons name="remove" size={20} color="#666" />
-        </TouchableOpacity>
-        <Text style={styles.quantity}>{item.quantity}</Text>
-        <TouchableOpacity style={styles.quantityButton} onPress={() => handleIncrement(item.id, item.size)}>
-          <Ionicons name="add" size={20} color="#666" />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
 
   return (
     <SafeScreen>
@@ -90,7 +59,47 @@ const CartScreen = () => {
           <ScrollView style={styles.content}>
             {/* Cart Items */}
             <View style={styles.cartItems}>
-              {cartItems.map(renderCartItem)}
+              {cartItems.map((item) => {
+                const optionsKey = item.options.map(o => `${o.optionId}_${o.optionValue}`).join('-') || '';
+                const key = `${item.id}-${optionsKey}`;
+
+                return (
+                  <View key={key} style={styles.cartItem}>
+                    <Image source={{ uri: item.image }} style={styles.itemImage} />
+                    <View style={styles.itemInfo}>
+                      <Text style={styles.itemName} numberOfLines={2}>
+                        {item.name}
+                      </Text>
+                      {item.options.length > 0 && (
+                        <View>
+                          {item.options.map((option, optionIndex) => (
+                            <Text key={`${option.optionId}-${option.optionValue}-${optionIndex}`} style={styles.itemOption}>{option.optionName}: {option.optionValue}</Text>
+                          ))}
+                        </View>
+                      )}
+                      <View style={styles.priceRow}>
+                        {item.special ? (
+                          <>
+                            <Text style={styles.itemSpecialPrice}>${item.special.toFixed(2)}</Text>
+                            <Text style={styles.itemOldPrice}>${item.price.toFixed(2)}</Text>
+                          </>
+                        ) : (
+                          <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
+                        )}
+                      </View>
+                    </View>
+                    <View style={styles.quantityControls}>
+                      <TouchableOpacity style={styles.quantityButton} onPress={() => handleDecrement(item.id, item.options)}>
+                        <Ionicons name="remove" size={20} color="#666" />
+                      </TouchableOpacity>
+                      <Text style={styles.quantity}>{item.quantity}</Text>
+                      <TouchableOpacity style={styles.quantityButton} onPress={() => handleIncrement(item.id, item.options)}>
+                        <Ionicons name="add" size={20} color="#666" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                );
+              })}
             </View>
 
             {/* Summary */}
@@ -175,6 +184,26 @@ const styles = StyleSheet.create({
   itemSize: {
     fontSize: 14,
     color: '#666',
+  },
+  itemOption: {
+    fontSize: 12,
+    color: '#666',
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  itemSpecialPrice: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FF6B3E',
+    marginRight: 8,
+  },
+  itemOldPrice: {
+    fontSize: 12,
+    color: '#999',
+    textDecorationLine: 'line-through',
   },
   itemPrice: {
     fontSize: 16,

@@ -4,6 +4,10 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import WishlistButton from './WishlistButton';
+import CartButton from './CartButton';
+import { useDispatch } from 'react-redux';
+import { addToCart } from '../redux/slices/cartSlice';
+import Toast from 'react-native-toast-message';
 import { RootStackParamList } from '../../App';
 
 type ProductsNavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -16,6 +20,7 @@ interface Product {
   sizes: string[];
   image: string;
   date_added?: string;
+  options?: boolean;
 }
 
 interface PropsProducts {
@@ -26,6 +31,7 @@ interface PropsProducts {
     price?: string;
     special?: string | null;
     date_added?: string;
+    options?: boolean;
   }>;
   title?: string;
 }
@@ -49,6 +55,7 @@ const Products = ({ products, title = 'Popular' }: PropsProducts) => {
       sizes: [],
       image: p.image ?? 'https://via.placeholder.com/250',
       date_added: p.date_added,
+      options: p.options,
     }))
     : [];
 
@@ -79,6 +86,7 @@ const Products = ({ products, title = 'Popular' }: PropsProducts) => {
   }, [productsData, selectedSort]);
 
   const navigation = useNavigation<ProductsNavigationProp>();
+  const dispatch = useDispatch();
 
   const renderProduct = ({ item }: { item: Product }) => (
     <TouchableOpacity
@@ -110,15 +118,17 @@ const Products = ({ products, title = 'Popular' }: PropsProducts) => {
               size={20}
               style={styles.wishlistButton}
             />
-            <TouchableOpacity
-              style={styles.cartButton}
-              onPress={(e) => {
-                e.stopPropagation();
-                // Add to cart logic here
+            <CartButton
+              product={{
+                id: item.id,
+                name: item.name,
+                price: parseNumber(item.price),
+                image: item.image,
+                special: item.special ? parseNumber(item.special) : undefined,
+                options: item.options,
               }}
-            >
-              <Ionicons name="cart-outline" size={20} color="#FF6B3E" />
-            </TouchableOpacity>
+              size={20}
+            />
           </View>
         </View>
       </View>

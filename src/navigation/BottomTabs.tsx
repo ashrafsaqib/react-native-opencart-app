@@ -15,6 +15,8 @@ const Tab = createBottomTabNavigator();
 const BottomTabs = () => {
   const wishlistItems = useSelector((state: RootState) => state.wishlist.items);
   const wishlistCount = wishlistItems.length;
+  const cartItems = useSelector((state: RootState) => state.cart.items);
+  const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
 
   return (
     <Tab.Navigator
@@ -41,6 +43,16 @@ const BottomTabs = () => {
             );
           } else if (route.name === 'CartTab') {
             iconName = focused ? 'cart' : 'cart-outline';
+            return (
+              <View style={styles.iconContainer}>
+                <Ionicons name={iconName} size={size} color={color} />
+                {cartCount > 0 && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{cartCount}</Text>
+                  </View>
+                )}
+              </View>
+            );
           } else if (route.name === 'ProfileTab') {
             iconName = focused ? 'person' : 'person-outline';
           }
