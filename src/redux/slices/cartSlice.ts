@@ -36,7 +36,7 @@ const cartSlice = createSlice({
       state,
       action: PayloadAction<
         Omit<CartItem, 'quantity' | 'price' | 'special'> &
-          { basePrice: number; specialPrice?: number; quantityToAdd?: number; }
+        { basePrice: number; specialPrice?: number; quantityToAdd?: number; }
       >
     ) => {
       const newOptionsString = JSON.stringify(action.payload.options);
@@ -115,10 +115,13 @@ const cartSlice = createSlice({
         );
       }
     },
+    clearCart: (state) => {
+      state.items = [];
+    },
   },
 });
 
-export const { addToCart, removeFromCart, incrementQuantity, decrementQuantity } = cartSlice.actions;
+export const { addToCart, removeFromCart, incrementQuantity, decrementQuantity, clearCart } = cartSlice.actions;
 
 export const selectIsInCart = (state: RootState, productId: string, options: CartItemOption[]) => {
   const optionsString = JSON.stringify(options);

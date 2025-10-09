@@ -79,14 +79,14 @@ const BottomTabs = () => {
         options={{ title: 'Wishlist' }}
       />
       <Tab.Screen
-        name="ProfileTab"
-        component={ProfileStack}
-        options={{ title: 'Profile' }}
-      />
-      <Tab.Screen
         name="CartTab"
         component={CartScreen}
         options={{ title: 'Cart' }}
+      />
+      <Tab.Screen
+        name="ProfileTab"
+        component={ProfileStack}
+        options={{ title: 'Profile' }}
       />
     </Tab.Navigator>
   );

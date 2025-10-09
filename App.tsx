@@ -5,14 +5,18 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import ProductScreen from './src/screens/product/ProductScreen';
 import BottomTabs from './src/navigation/BottomTabs';
 import WishlistScreen from './src/screens/wishlist/WishlistScreen';
+import CheckoutWebViewScreen from './src/screens/cart/CheckoutWebViewScreen';
 import { AuthProvider } from './src/context/AuthContext';
 import { Provider } from 'react-redux';
 import { store } from './src/redux/store';
+import OrderSuccessScreen from './src/screens/cart/OrderSuccessScreen';
 
 export type RootStackParamList = {
   MainTabs: undefined;
   Product: { product_id: string };
   Wishlist: undefined;
+  CheckoutWebView: { sessionId: string; url?: string };
+  OrderSuccess: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -37,6 +41,14 @@ function RootStack() {
         <Stack.Screen
           name="Wishlist"
           component={WishlistScreen}
+        />
+        <Stack.Screen
+          name="CheckoutWebView"
+          component={CheckoutWebViewScreen}
+        />
+        <Stack.Screen
+          name="OrderSuccess"
+          component={OrderSuccessScreen}
         />
       </Stack.Navigator>
     </NavigationContainer>

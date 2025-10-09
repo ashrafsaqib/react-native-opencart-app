@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import SafeScreen from '../../components/SafeScreen';
 import { useNavigation } from '@react-navigation/native';
@@ -14,6 +15,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../../redux/store';
 import { incrementQuantity, decrementQuantity, CartItemOption } from '../../redux/slices/cartSlice';
+import { BASE_URL } from '../../../config';
+import { useAuth } from '../../context/AuthContext';
 
 type RootStackParamList = {
   Home: undefined;
@@ -30,13 +33,72 @@ const CartScreen = () => {
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shipping = 10;
   const total = subtotal + shipping;
-
+  const { user } = useAuth();
   const handleIncrement = (id: string, options: CartItemOption[]) => {
     dispatch(incrementQuantity({ id, options }));
   };
 
   const handleDecrement = (id: string, options: CartItemOption[]) => {
     dispatch(decrementQuantity({ id, options }));
+  };
+
+  const handleCheckout = async () => {
+    try {
+      // Check if there's an existing session_id
+      const existingSessionId = await AsyncStorage.getItem('checkout_session_id');
+
+      const cart = cartItems.map(item => {
+        const obj: any = { product_id: Number(item.id), quantity: item.quantity };
+        if (item.options && item.options.length > 0) {
+          const optionObj: any = {};
+          item.options.forEach(opt => {
+            const key = opt.optionId;
+            if (opt.optionValueId) {
+              optionObj[key] = opt.optionValueId;
+            } else {
+              let val: any = opt.optionValue;
+              try {
+                val = JSON.parse(opt.optionValue);
+              } catch {
+                val = opt.optionValue; // Keep as string if not JSON
+              }
+              optionObj[key] = val;
+            }
+          });
+          obj.option = optionObj;
+        }
+        return obj;
+      });
+
+      const payload: any = {
+        // email: 'miangdpp@gmail.com',
+        // password: 'test1234',
+        cart
+      };
+
+      // Add session_id to payload if it exists
+      if (existingSessionId) {
+        payload.session_id = existingSessionId;
+      }
+
+      const url = `${BASE_URL}.prepareCheckoutSession`;
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const res = await resp.json();
+
+      if (res && res.success && res.session_id) {
+        // Save session_id to AsyncStorage
+        await AsyncStorage.setItem('checkout_session_id', res.session_id);
+        navigation.navigate('CheckoutWebView' as any, { sessionId: res.session_id });
+      } else {
+        console.warn('Failed to prepare session', res);
+      }
+    } catch (error) {
+      console.error('checkout error', error);
+    }
   };
 
   return (
@@ -122,7 +184,7 @@ const CartScreen = () => {
 
           {/* Checkout Button */}
           <View style={styles.bottomBar}>
-            <TouchableOpacity style={styles.checkoutButton}>
+            <TouchableOpacity style={styles.checkoutButton} onPress={handleCheckout}>
               <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
             </TouchableOpacity>
           </View>
