@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { useNavigation } from '@react-navigation/native';
+import SafeScreen from '../../components/SafeScreen';
 
 const faqs = [
   {
@@ -21,6 +23,7 @@ const faqs = [
 ];
 
 const HelpCenterScreen = () => {
+  const navigation = useNavigation();
   const renderFaq = ({ item }: { item: typeof faqs[0] }) => (
     <View style={styles.faqContainer}>
       <Text style={styles.question}>{item.question}</Text>
@@ -29,32 +32,48 @@ const HelpCenterScreen = () => {
   );
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Help Center</Text>
-      <FlatList
-        data={faqs}
-        renderItem={renderFaq}
-        keyExtractor={(item) => item.id}
-        showsVerticalScrollIndicator={false}
-      />
-      <TouchableOpacity style={styles.contactButton}>
-        <Ionicons name="chatbubble-ellipses-outline" size={24} color="#fff" />
-        <Text style={styles.contactButtonText}>Contact Us</Text>
-      </TouchableOpacity>
-    </View>
+    <SafeScreen>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="chevron-back" size={24} color="#000" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Help Center</Text>
+        <View style={{ width: 24 }} />
+      </View>
+      <View style={styles.content}>
+        <FlatList
+          data={faqs}
+          renderItem={renderFaq}
+          keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+        />
+        <TouchableOpacity style={styles.contactButton}>
+          <Ionicons name="chatbubble-ellipses-outline" size={24} color="#fff" />
+          <Text style={styles.contactButtonText}>Contact Us</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  header: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  content: {
     flex: 1,
     padding: 24,
     backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 24,
   },
   faqContainer: {
     marginBottom: 24,

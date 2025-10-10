@@ -8,10 +8,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { BASE_URL } from '../../../config';
 
 type AuthStackParamList = {
   Login: undefined;
@@ -25,11 +27,37 @@ interface ForgotPasswordScreenProps {
   navigation: ForgotPasswordScreenNavigationProp;
 }
 
-const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation }) => {
+const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
+  navigation,
+}) => {
   const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleResetPassword = () => {
-    // Implement password reset logic here
+  const handleResetPassword = async () => {
+    if (!email) {
+      Alert.alert('Error', 'Please enter your email address.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await fetch(`${BASE_URL}.forgotPassword`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+      const data = await response.json();
+      if (data.error) {
+        Alert.alert('Error', data.error);
+      } else if (data.message) {
+        Alert.alert('Success', data.message);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An unexpected error occurred.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -68,10 +96,13 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
             </View>
 
             <TouchableOpacity
-              style={styles.resetButton}
+              style={[styles.resetButton, loading && styles.disabledButton]}
               onPress={handleResetPassword}
+              disabled={loading}
             >
-              <Text style={styles.resetButtonText}>Send Reset Link</Text>
+              <Text style={styles.resetButtonText}>
+                {loading ? 'Sending...' : 'Send Reset Link'}
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -97,7 +128,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    padding: 24,
+    padding: 16,
   },
   backButton: {
     marginBottom: 24,
@@ -141,6 +172,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
+  },
+  disabledButton: {
+    backgroundColor: '#FFAA8D',
   },
   resetButtonText: {
     color: '#FFF',

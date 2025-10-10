@@ -9,11 +9,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useAuth } from '../../context/AuthContext';
+import { BASE_URL } from '../../../config';
 
 type AuthStackParamList = {
   Login: undefined;
@@ -28,13 +30,57 @@ interface LoginScreenProps {
 }
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
-  const [email, setEmail] = useState('test@test.com');
-  const [password, setPassword] = useState('password');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const { login } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleLogin = async () => {
-    await login(email, password);
+    try {
+      setError('');
+      setLoading(true);
+
+      const payload = {
+        email,
+        password
+      };
+
+      const url = `${BASE_URL}.login`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (data.message === 'Success' && data.user) {
+        // Save user data to AsyncStorage
+        await Promise.all([
+          AsyncStorage.setItem('user_id', data.user.id),
+          AsyncStorage.setItem('user_email', data.user.email),
+          AsyncStorage.setItem('user_firstname', data.user.firstname),
+          AsyncStorage.setItem('user_lastname', data.user.lastname),
+          AsyncStorage.setItem('user_password', password)
+        ]);
+        
+        // Navigate to main app
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'MainTabs' as any }],
+        });
+      } else {
+        setError(data.error || 'Login failed. Please check your credentials.');
+      }
+    } catch (error) {
+      setError('Network error. Please try again.');
+      console.error('Login error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -97,14 +143,23 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
             </TouchableOpacity>
 
+            {error ? (
+              <Text style={styles.errorText}>{error}</Text>
+            ) : null}
+
             <TouchableOpacity
-              style={styles.loginButton}
+              style={[styles.loginButton, loading && styles.loginButtonDisabled]}
               onPress={handleLogin}
+              disabled={loading}
             >
-              <Text style={styles.loginButtonText}>Log In</Text>
+              {loading ? (
+                <ActivityIndicator color="#FFF" />
+              ) : (
+                <Text style={styles.loginButtonText}>Log In</Text>
+              )}
             </TouchableOpacity>
 
-            <View style={styles.divider}>
+            {/* <View style={styles.divider}>
               <View style={styles.dividerLine} />
               <Text style={styles.dividerText}>OR</Text>
               <View style={styles.dividerLine} />
@@ -112,11 +167,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
             <TouchableOpacity
               style={styles.socialButton}
-              onPress={() => {/* Implement Google login */}}
+              onPress={() => {}}
             >
               <Ionicons name="logo-google" size={20} color="#666" />
               <Text style={styles.socialButtonText}>Continue with Google</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
 
           <View style={styles.footer}>
@@ -135,6 +190,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFF',
+  },
+  errorText: {
+    color: '#FF3B30',
+    textAlign: 'center',
+    marginBottom: 16,
+    fontSize: 14,
+  },
+  loginButtonDisabled: {
+    backgroundColor: '#FFB7A5',
   },
   keyboardAvoidingView: {
     flex: 1,

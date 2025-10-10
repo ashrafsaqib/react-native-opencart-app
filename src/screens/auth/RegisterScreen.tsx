@@ -8,10 +8,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BASE_URL } from '../../../config';
 
 type AuthStackParamList = {
   Login: undefined;
@@ -26,15 +29,84 @@ interface RegisterScreenProps {
 }
 
 const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-  const handleRegister = () => {
-    // Implement register logic here
+  const validateForm = () => {
+    const newErrors: { [key: string]: string } = {};
+
+    if (!firstName) newErrors.firstName = 'First name is required';
+    if (!lastName) newErrors.lastName = 'Last name is required';
+    if (!email) newErrors.email = 'Email is required';
+    if (!password) newErrors.password = 'Password is required';
+    if (password.length < 8) newErrors.password = 'Password must be at least 8 characters';
+    if (password !== confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleRegister = async () => {
+    try {
+      if (!validateForm()) return;
+
+      setLoading(true);
+      setErrors({});
+
+      const payload = {
+        firstname: firstName,
+        lastname: lastName,
+        email,
+        password,
+      };
+
+      const url = `${BASE_URL}.register`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (data.message === 'User registered successfully' && data.user) {
+        // Save user data to AsyncStorage
+        await Promise.all([
+          AsyncStorage.setItem('user_id', data.user.id),
+          AsyncStorage.setItem('user_email', data.user.email),
+          AsyncStorage.setItem('user_firstname', data.user.firstname),
+          AsyncStorage.setItem('user_lastname', data.user.lastname),
+          AsyncStorage.setItem('user_password', password)
+        ]);
+        
+        // Navigate to main app
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'MainTabs' as any }],
+        });
+      } else if (data.error) {
+        // Handle validation errors from the server
+        const newErrors: { [key: string]: string } = {};
+        Object.entries(data.error).forEach(([key, value]) => {
+          newErrors[key] = value as string;
+        });
+        setErrors(newErrors);
+      }
+    } catch (error) {
+      setErrors({ general: 'Network error. Please try again.' });
+      console.error('Registration error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -62,11 +134,23 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
               <Ionicons name="person-outline" size={20} color="#666" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Full Name"
-                value={name}
-                onChangeText={setName}
+                placeholder="First Name"
+                value={firstName}
+                onChangeText={setFirstName}
               />
             </View>
+            {errors.firstName && <Text style={styles.errorText}>{errors.firstName}</Text>}
+
+            <View style={styles.inputContainer}>
+              <Ionicons name="person-outline" size={20} color="#666" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Last Name"
+                value={lastName}
+                onChangeText={setLastName}
+              />
+            </View>
+            {errors.lastName && <Text style={styles.errorText}>{errors.lastName}</Text>}
 
             <View style={styles.inputContainer}>
               <Ionicons name="mail-outline" size={20} color="#666" style={styles.inputIcon} />
@@ -122,14 +206,25 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
               </TouchableOpacity>
             </View>
 
+            {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+            {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+            {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
+            {errors.general && <Text style={styles.errorText}>{errors.general}</Text>}
+            {errors.warning && <Text style={styles.errorText}>{errors.warning}</Text>}
+
             <TouchableOpacity
-              style={styles.registerButton}
+              style={[styles.registerButton, loading && styles.registerButtonDisabled]}
               onPress={handleRegister}
+              disabled={loading}
             >
-              <Text style={styles.registerButtonText}>Create Account</Text>
+              {loading ? (
+                <ActivityIndicator color="#FFF" />
+              ) : (
+                <Text style={styles.registerButtonText}>Create Account</Text>
+              )}
             </TouchableOpacity>
 
-            <View style={styles.divider}>
+            {/* <View style={styles.divider}>
               <View style={styles.dividerLine} />
               <Text style={styles.dividerText}>OR</Text>
               <View style={styles.dividerLine} />
@@ -137,11 +232,11 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
 
             <TouchableOpacity
               style={styles.socialButton}
-              onPress={() => {/* Implement Google sign up */}}
+              onPress={() => {}}
             >
               <Ionicons name="logo-google" size={20} color="#666" />
               <Text style={styles.socialButtonText}>Sign up with Google</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
 
           <View style={styles.footer}>
@@ -160,6 +255,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFF',
+  },
+  errorText: {
+    color: '#FF3B30',
+    fontSize: 14,
+    marginTop: -12,
+    marginBottom: 16,
+    marginLeft: 4,
   },
   keyboardAvoidingView: {
     flex: 1,
@@ -184,6 +286,22 @@ const styles = StyleSheet.create({
   form: {
     marginBottom: 24,
   },
+  registerButton: {
+    backgroundColor: '#FF6B3E',
+    borderRadius: 12,
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  registerButtonDisabled: {
+    backgroundColor: '#FFB7A5',
+  },
+  registerButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -204,19 +322,6 @@ const styles = StyleSheet.create({
   },
   showPasswordButton: {
     padding: 4,
-  },
-  registerButton: {
-    backgroundColor: '#FF6B3E',
-    borderRadius: 12,
-    height: 56,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  registerButtonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '600',
   },
   divider: {
     flexDirection: 'row',

@@ -208,8 +208,6 @@ const CategoryScreen = () => {
     <ProductCard
       product={item}
       onPress={() => navigation.navigate('Product', { product_id: item.id })}
-      onAdd={() => {
-      }}
     />
   );
 
@@ -475,8 +473,9 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#000',
   },
   searchContainer: {
     flexDirection: 'row',

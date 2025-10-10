@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { useNavigation } from '@react-navigation/native';
+import SafeScreen from '../../components/SafeScreen';
 
 const paymentMethods = [
   {
@@ -18,6 +20,7 @@ const paymentMethods = [
 ];
 
 const PaymentMethodsScreen = () => {
+  const navigation = useNavigation();
   const renderPaymentMethod = ({ item }: { item: typeof paymentMethods[0] }) => (
     <View style={styles.paymentMethodContainer}>
       <View style={styles.paymentMethodHeader}>
@@ -38,32 +41,48 @@ const PaymentMethodsScreen = () => {
   );
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Payment Methods</Text>
-      <FlatList
-        data={paymentMethods}
-        renderItem={renderPaymentMethod}
-        keyExtractor={(item) => item.id}
-        showsVerticalScrollIndicator={false}
-      />
-      <TouchableOpacity style={styles.addButton}>
-        <Ionicons name="add" size={24} color="#fff" />
-        <Text style={styles.addButtonText}>Add New Payment Method</Text>
-      </TouchableOpacity>
-    </View>
+    <SafeScreen>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="chevron-back" size={24} color="#000" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Payment Methods</Text>
+        <View style={{ width: 24 }} />
+      </View>
+      <View style={styles.content}>
+        <FlatList
+          data={paymentMethods}
+          renderItem={renderPaymentMethod}
+          keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+        />
+        <TouchableOpacity style={styles.addButton}>
+          <Ionicons name="add" size={24} color="#fff" />
+          <Text style={styles.addButtonText}>Add New Payment Method</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  header: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  content: {
     flex: 1,
     padding: 24,
     backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 24,
   },
   paymentMethodContainer: {
     borderWidth: 1,

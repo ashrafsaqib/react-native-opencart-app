@@ -12,8 +12,23 @@ import SettingsScreen from '../screens/profile/SettingsScreen';
 import HelpCenterScreen from '../screens/profile/HelpCenterScreen';
 
 import ChangePasswordScreen from '../screens/profile/ChangePasswordScreen';
+import AddressFormScreen from '../screens/profile/AddressFormScreen';
 
-const Stack = createNativeStackNavigator();
+export type ProfileStackParamList = {
+  Profile: undefined;
+  EditProfile: undefined;
+  ShippingAddress: undefined;
+  PaymentMethods: undefined;
+  OrderHistory: undefined;
+  OrderDetails: undefined;
+  Notifications: undefined;
+  Settings: undefined;
+  HelpCenter: undefined;
+  ChangePassword: undefined;
+  AddressForm: { address_id?: string };
+};
+
+const Stack = createNativeStackNavigator<ProfileStackParamList>();
 
 const ProfileStack = () => {
   return (
@@ -28,6 +43,7 @@ const ProfileStack = () => {
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="HelpCenter" component={HelpCenterScreen} />
       <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+      <Stack.Screen name="AddressForm" component={AddressFormScreen} />
     </Stack.Navigator>
   );
 };

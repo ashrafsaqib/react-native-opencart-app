@@ -16,8 +16,6 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../../redux/store';
 import { incrementQuantity, decrementQuantity, CartItemOption } from '../../redux/slices/cartSlice';
 import { BASE_URL } from '../../../config';
-import { useAuth } from '../../context/AuthContext';
-
 type RootStackParamList = {
   Home: undefined;
   Cart: undefined;
@@ -33,7 +31,6 @@ const CartScreen = () => {
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shipping = 10;
   const total = subtotal + shipping;
-  const { user } = useAuth();
   const handleIncrement = (id: string, options: CartItemOption[]) => {
     dispatch(incrementQuantity({ id, options }));
   };
@@ -70,11 +67,19 @@ const CartScreen = () => {
         return obj;
       });
 
+      // Get user credentials from storage
+      const userEmail = await AsyncStorage.getItem('user_email');
+      const userPassword = await AsyncStorage.getItem('user_password');
+
       const payload: any = {
-        // email: 'miangdpp@gmail.com',
-        // password: 'test1234',
         cart
       };
+
+      // Add credentials if they exist
+      if (userEmail && userPassword) {
+        payload.email = userEmail;
+        payload.password = userPassword;
+      }
 
       // Add session_id to payload if it exists
       if (existingSessionId) {
@@ -105,9 +110,6 @@ const CartScreen = () => {
     <SafeScreen>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={24} color="#000" />
-        </TouchableOpacity>
         <Text style={styles.headerTitle}>Shopping Cart</Text>
         <View style={{ width: 24 }} />
       </View>
@@ -195,21 +197,15 @@ const CartScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF',
-  },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#EEE',
+    borderBottomColor: '#eee',
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#000',
   },
   content: {
     flex: 1,
