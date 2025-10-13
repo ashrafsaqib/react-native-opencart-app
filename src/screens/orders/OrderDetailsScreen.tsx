@@ -129,25 +129,6 @@ const OrderDetailsScreen = ({ navigation, route }: Props) => {
     }
   };
 
-  const handleReturnRequest = async (productId: string, orderId: string) => {
-    Alert.alert(
-      'Return Item',
-      'Are you sure you want to request a return for this item?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel'
-        },
-        {
-          text: 'Confirm',
-          onPress: () => {
-            Alert.alert('Return Requested', 'Your return request has been submitted. We will contact you shortly.');
-          }
-        }
-      ]
-    );
-  };
-
   const renderProductOptions = (options: OrderProduct['option']) => {
     if (!options.length) return null;
     
@@ -244,12 +225,6 @@ const OrderDetailsScreen = ({ navigation, route }: Props) => {
                 <Text style={styles.productQuantity}>{product.quantity}x</Text>
                 <Text style={styles.productPrice}>{product.price}</Text>
               </View>
-              <TouchableOpacity
-                style={styles.returnButton}
-                onPress={() => handleReturnRequest(product.model, orderDetails.order.order_id)}
-              >
-                <Text style={styles.returnButtonText}>Return Item</Text>
-              </TouchableOpacity>
             </View>
           ))}
         </View>
@@ -378,18 +353,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-  },
-  returnButton: {
-    backgroundColor: '#007AFF',
-    padding: 10,
-    borderRadius: 8,
-    marginTop: 12,
-    alignItems: 'center',
-  },
-  returnButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
   },
   productHeader: {
     flexDirection: 'row',
