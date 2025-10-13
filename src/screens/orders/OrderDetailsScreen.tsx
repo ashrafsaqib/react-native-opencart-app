@@ -1,196 +1,435 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, ScrollView } from 'react-native';
-import { RouteProp, useRoute } from '@react-navigation/native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { StackScreenProps } from '@react-navigation/stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import SafeScreen from '../../components/SafeScreen';
+import { BASE_URL } from '../../../config';
 
-type OrderStackParamList = {
+type RootStackParamList = {
+  Login: undefined;
   OrderDetails: { orderId: string };
 };
 
-type OrderDetailsScreenRouteProp = RouteProp<OrderStackParamList, 'OrderDetails'>;
+type Props = StackScreenProps<RootStackParamList, 'OrderDetails'>;
 
-const orders = {
-  '1': {
-    id: '1',
-    orderId: '#123456',
-    date: '2023-10-26',
-    total: 64.98,
-    status: 'Delivered',
-    shippingAddress: '123 Main St, Anytown, USA 12345',
-    products: [
-      { id: '1', name: 'Product 1', price: 29.99, quantity: 1 },
-      { id: '2', name: 'Product 2', price: 29.99, quantity: 1 },
-    ],
-    subTotal: 59.98,
-    shipping: 5.00,
-    paymentMethod: 'Credit Card',
-    shippingMethod: 'Standard Shipping',
-  },
-  '2': {
-    id: '2',
-    orderId: '#123457',
-    date: '2023-10-25',
-    total: 34.99,
-    status: 'Shipped',
-    shippingAddress: '456 Market St, San Francisco, CA 94103',
-    products: [
-      { id: '3', name: 'Product 3', price: 29.99, quantity: 1 },
-    ],
-    subTotal: 29.99,
-    shipping: 5.00,
-    paymentMethod: 'PayPal',
-    shippingMethod: 'Express Shipping',
-  },
-  '3': {
-    id: '3',
-    orderId: '#123458',
-    date: '2023-10-24',
-    total: 24.99,
-    status: 'Processing',
-    shippingAddress: '789 Oak St, Somewhere, USA 54321',
-    products: [
-      { id: '4', name: 'Product 4', price: 19.99, quantity: 1 },
-    ],
-    subTotal: 19.99,
-    shipping: 5.00,
-    paymentMethod: 'Credit Card',
-    shippingMethod: 'Standard Shipping',
-  },
+interface OrderProduct {
+  name: string;
+  model: string;
+  option: Array<{
+    name: string;
+    value: string;
+  }>;
+  quantity: string;
+  price: string;
+  total: string;
+}
+
+interface OrderAddress {
+  firstname: string;
+  lastname: string;
+  company: string;
+  address_1: string;
+  address_2: string;
+  city: string;
+  postcode: string;
+  zone: string;
+  zone_code: string;
+  country: string;
+}
+
+interface OrderHistory {
+  date_added: string;
+  status: string;
+  comment: string;
+}
+
+interface OrderDetails {
+  order: {
+    order_id: string;
+    invoice_no: string;
+    payment_method: string;
+    shipping_method: string;
+  };
+  addresses: {
+    shipping: OrderAddress;
+  };
+  products: OrderProduct[];
+  totals: Array<{
+    title: string;
+    text: string;
+  }>;
+  history: OrderHistory[];
+}
+
+const getStatusColor = (status: string): string => {
+  switch (status.toLowerCase()) {
+    case 'pending':
+      return '#FFA500';
+    case 'processing':
+      return '#0000FF';
+    case 'shipped':
+      return '#008000';
+    case 'completed':
+      return '#006400';
+    case 'cancelled':
+      return '#FF0000';
+    case 'failed':
+      return '#8B0000';
+    case 'refunded':
+      return '#A0522D';
+    default:
+      return '#808080';
+  }
 };
 
-const OrderDetailsScreen = () => {
-  const route = useRoute<OrderDetailsScreenRouteProp>();
-  const { orderId } = route.params;
-  const order = orders[orderId as keyof typeof orders];
+const OrderDetailsScreen = ({ navigation, route }: Props) => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
 
-  const renderProduct = ({ item }: { item: typeof order.products[0] }) => (
-    <View style={styles.productContainer}>
-      <Text style={styles.productName}>{item.name}</Text>
-      <Text style={styles.productQuantity}>x {item.quantity}</Text>
-      <Text style={styles.productPrice}>$ {item.price.toFixed(2)}</Text>
+  useEffect(() => {
+    fetchOrderDetails();
+  }, []);
+
+  const fetchOrderDetails = async () => {
+    try {
+      const userId = await AsyncStorage.getItem('user_id');
+      if (!userId) {
+        navigation.navigate('Login' as never);
+        return;
+      }
+
+      const response = await fetch(`${BASE_URL}.getOrder`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          customer_id: userId,
+          order_id: route.params.orderId
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        setError(data.error);
+        Alert.alert('Error', data.error);
+        return;
+      }
+
+      setOrderDetails(data);
+    } catch (error) {
+      console.error('Error fetching order details:', error);
+      setError('Failed to fetch order details');
+      Alert.alert('Error', 'Failed to fetch order details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReturnRequest = async (productId: string, orderId: string) => {
+    Alert.alert(
+      'Return Item',
+      'Are you sure you want to request a return for this item?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        },
+        {
+          text: 'Confirm',
+          onPress: () => {
+            Alert.alert('Return Requested', 'Your return request has been submitted. We will contact you shortly.');
+          }
+        }
+      ]
+    );
+  };
+
+  const renderProductOptions = (options: OrderProduct['option']) => {
+    if (!options.length) return null;
+    
+    return (
+      <View style={styles.optionsContainer}>
+        {options.map((option, index) => (
+          <Text key={index} style={styles.optionText}>
+            {option.name}: {option.value}
+          </Text>
+        ))}
+      </View>
+    );
+  };
+
+  const renderAddress = (address: OrderAddress) => (
+    <View style={styles.addressContainer}>
+      <Text style={styles.addressText}>{address.firstname} {address.lastname}</Text>
+      {address.company ? <Text style={styles.addressText}>{address.company}</Text> : null}
+      <Text style={styles.addressText}>{address.address_1}</Text>
+      {address.address_2 ? <Text style={styles.addressText}>{address.address_2}</Text> : null}
+      <Text style={styles.addressText}>
+        {address.city}, {address.zone} {address.postcode}
+      </Text>
+      <Text style={styles.addressText}>{address.country}</Text>
     </View>
   );
 
+  if (loading) {
+    return (
+      <SafeScreen>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#000" />
+        </View>
+      </SafeScreen>
+    );
+  }
+
+  if (error || !orderDetails) {
+    return (
+      <SafeScreen>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error || 'Failed to load order details'}</Text>
+        </View>
+      </SafeScreen>
+    );
+  }
+
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Order Details</Text>
-      <View style={styles.orderDetailsContainer}>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Order ID</Text>
-          <Text style={styles.detailValue}>{order.orderId}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Date</Text>
-          <Text style={styles.detailValue}>{order.date}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Status</Text>
-          <Text style={styles.detailValue}>{order.status}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Payment Method</Text>
-          <Text style={styles.detailValue}>{order.paymentMethod}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Shipping Method</Text>
-          <Text style={styles.detailValue}>{order.shippingMethod}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Shipping Address</Text>
-          <Text style={[styles.detailValue, styles.addressValue]}>{order.shippingAddress}</Text>
-        </View>
+    <SafeScreen>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="chevron-back" size={24} color="#000" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Order #{orderDetails.order.order_id}</Text>
+        <View style={{ width: 24 }} />
       </View>
 
-      <Text style={styles.productsTitle}>Products</Text>
-      <FlatList
-        data={order.products}
-        renderItem={renderProduct}
-        keyExtractor={(item) => item.id}
-        scrollEnabled={false}
-      />
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        {/* Order Info Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Order Information</Text>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Invoice No:</Text>
+            <Text style={styles.infoValue}>{orderDetails.order.invoice_no || 'Not Generated'}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Payment Method:</Text>
+            <Text style={styles.infoValue}>{orderDetails.order.payment_method}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Shipping Method:</Text>
+            <Text style={styles.infoValue}>{orderDetails.order.shipping_method}</Text>
+          </View>
+        </View>
 
-      <View style={styles.totalsContainer}>
-        <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Sub-total</Text>
-          <Text style={styles.totalValue}>$ {order.subTotal.toFixed(2)}</Text>
+        {/* Shipping Address */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Shipping Address</Text>
+          {renderAddress(orderDetails.addresses.shipping)}
         </View>
-        <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Shipping</Text>
-          <Text style={styles.totalValue}>$ {order.shipping.toFixed(2)}</Text>
+
+        {/* Products */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Products</Text>
+          {orderDetails.products.map((product, index) => (
+            <View key={index} style={styles.productContainer}>
+              <View style={styles.productHeader}>
+                <Text style={styles.productName}>{product.name}</Text>
+                <Text style={styles.productTotal}>{product.total}</Text>
+              </View>
+              <Text style={styles.productModel}>Model: {product.model}</Text>
+              {renderProductOptions(product.option)}
+              <View style={styles.productPriceInfo}>
+                <Text style={styles.productQuantity}>{product.quantity}x</Text>
+                <Text style={styles.productPrice}>{product.price}</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.returnButton}
+                onPress={() => handleReturnRequest(product.model, orderDetails.order.order_id)}
+              >
+                <Text style={styles.returnButtonText}>Return Item</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
         </View>
-        <View style={[styles.totalRow, styles.finalTotalRow]}>
-          <Text style={styles.finalTotalLabel}>Total</Text>
-          <Text style={styles.finalTotalValue}>$ {order.total.toFixed(2)}</Text>
+
+        {/* Order Totals */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Order Totals</Text>
+          {orderDetails.totals.map((total, index) => (
+            <View key={index} style={styles.totalRow}>
+              <Text style={styles.totalLabel}>{total.title}:</Text>
+              <Text style={styles.totalValue}>{total.text}</Text>
+            </View>
+          ))}
         </View>
-      </View>
-    </ScrollView>
+
+        {/* Order History */}
+        <View style={[styles.section, styles.lastSection]}>
+          <Text style={styles.sectionTitle}>Order History</Text>
+          {orderDetails.history.map((history, index) => (
+            <View key={index} style={styles.historyItem}>
+              <View style={styles.historyHeader}>
+                <Text style={styles.historyDate}>
+                  {history.date_added 
+                    ? new Date(history.date_added.replace(' ', 'T')).toLocaleDateString()
+                    : 'N/A'}
+                </Text>
+                <Text style={[
+                  styles.historyStatus,
+                  { backgroundColor: getStatusColor(history.status) }
+                ]}>
+                  {history.status}
+                </Text>
+              </View>
+              {history.comment ? (
+                <Text style={styles.historyComment}>{history.comment}</Text>
+              ) : null}
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+    </SafeScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 24,
-    backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 24,
-  },
-  orderDetailsContainer: {
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 12,
+  header: {
     padding: 16,
-    marginBottom: 24,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  detailLabel: {
-    fontSize: 16,
-    color: '#666',
-  },
-  detailValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    flexShrink: 1,
-    textAlign: 'right',
-  },
-  addressValue: {
-    flexBasis: '60%',
-  },
-  productsTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  productContainer: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  container: {
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+    fontSize: 16,
+  },
+  section: {
+    padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#e1e1e1',
+    backgroundColor: '#fff',
+    marginBottom: 8,
+  },
+  lastSection: {
+    borderBottomWidth: 0,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    color: '#000',
+  },
+  infoRow: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  infoLabel: {
+    color: '#666',
+    flex: 1,
+  },
+  infoValue: {
+    color: '#000',
+    flex: 2,
+  },
+  addressContainer: {
+    backgroundColor: '#f9f9f9',
+    padding: 12,
+    borderRadius: 8,
+  },
+  addressText: {
+    color: '#333',
+    marginBottom: 4,
+    fontSize: 14,
+  },
+  productContainer: {
+    backgroundColor: '#ffffff',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  returnButton: {
+    backgroundColor: '#007AFF',
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 12,
+    alignItems: 'center',
+  },
+  returnButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  productHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 4,
   },
   productName: {
     fontSize: 16,
+    fontWeight: '600',
+    color: '#000',
+    flex: 1,
   },
-  productQuantity: {
-    fontSize: 16,
-    color: '#666',
-  },
-  productPrice: {
+  productTotal: {
     fontSize: 16,
     fontWeight: '600',
+    color: '#000',
   },
-  totalsContainer: {
-    marginTop: 24,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
+  productModel: {
+    color: '#666',
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  optionsContainer: {
+    marginTop: 4,
+  },
+  optionText: {
+    color: '#666',
+    fontSize: 14,
+  },
+  productPriceInfo: {
+    flexDirection: 'row',
+    marginTop: 8,
+  },
+  productQuantity: {
+    color: '#666',
+    marginRight: 8,
+  },
+  productPrice: {
+    color: '#666',
   },
   totalRow: {
     flexDirection: 'row',
@@ -198,25 +437,40 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   totalLabel: {
-    fontSize: 16,
     color: '#666',
   },
   totalValue: {
-    fontSize: 16,
+    color: '#000',
+    fontWeight: '500',
   },
-  finalTotalRow: {
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
+  historyItem: {
+    backgroundColor: '#f9f9f9',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
   },
-  finalTotalLabel: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  historyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
   },
-  finalTotalValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  historyDate: {
+    color: '#666',
+    fontSize: 14,
+  },
+  historyStatus: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  historyComment: {
+    color: '#333',
+    fontSize: 14,
+    marginTop: 4,
   },
 });
 
