@@ -148,7 +148,7 @@ const Deals = ({ deal, onExpired }: Props) => {
             }}
             onPress={() => navigation.navigate('Product', { product_id: deal.id })}
             badge={<View style={styles.discountBadge}><Text style={styles.discountText}>{deal.discount}</Text></View>}
-            containerStyle={{ width: 220, marginRight: 12 }}
+            containerStyle={{ width: 200, marginRight: 12 }}
             imageStyle={{ height: 150 }}
           />
         ))}

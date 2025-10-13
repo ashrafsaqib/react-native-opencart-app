@@ -428,7 +428,7 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ navigation }) => {
                         image: r.image,
                         options: r.options,
                       }}
-                      containerStyle={{ width: 220, marginRight: 12 }}
+                      containerStyle={{ width: 200, marginRight: 12 }}
                       imageStyle={{ height: 150 }}
                       onPress={() => navigation.navigate('Product', { product_id: r.id })}
                     />

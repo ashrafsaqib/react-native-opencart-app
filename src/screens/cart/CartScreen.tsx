@@ -1,45 +1,112 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
+  ActivityIndicator,
   TouchableOpacity,
-  Image,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import WebView, { WebViewNavigation } from 'react-native-webview';
 import SafeScreen from '../../components/SafeScreen';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../../redux/store';
-import { incrementQuantity, decrementQuantity, CartItemOption } from '../../redux/slices/cartSlice';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '../../../config';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { removeFromCart, addToCart } from '../../redux/slices/cartSlice';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
 type RootStackParamList = {
-  Home: undefined;
-  Cart: undefined;
+  MainTabs: undefined;
+  Product: { product_id: string };
+  Wishlist: undefined;
+  CheckoutWebView: { sessionId: string; url?: string };
+  OrderSuccess: undefined;
 };
 
-type CartScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Cart'>;
-
-
 const CartScreen = () => {
-  const navigation = useNavigation<CartScreenNavigationProp>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const dispatch = useDispatch<AppDispatch>();
   const cartItems = useSelector((state: RootState) => state.cart.items);
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shipping = 10;
-  const total = subtotal + shipping;
-  const handleIncrement = (id: string, options: CartItemOption[]) => {
-    dispatch(incrementQuantity({ id, options }));
+  const [isLoading, setIsLoading] = useState(true);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+
+  const syncCartWithServer = async () => {
+    try {
+      const savedSessionId = await AsyncStorage.getItem('checkout_session_id');
+      if (!savedSessionId) return;
+
+      const url = `${BASE_URL}.syncCart`;
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: savedSessionId }),
+      });
+
+      const res = await resp.json();
+      console.log('sync cart response', res);
+      if (res && res.success) {
+        if (res.all_product_ids && Array.isArray(res.all_product_ids)) {
+          // Convert all_product_ids to integers for comparison
+          const validProductIds = res.all_product_ids.map((id: string) => parseInt(id));
+          cartItems.forEach(cartItem => {
+            if (!validProductIds.includes(parseInt(cartItem.id))) {
+              dispatch(removeFromCart({ id: cartItem.id, options: cartItem.options }));
+            }
+          });
+        }
+
+        if (res.update_ids && Object.keys(res.update_ids).length > 0) {
+          Object.entries(res.update_ids).forEach(([id, quantity]) => {
+            const cartItem = cartItems.find(item => parseInt(item.id) === parseInt(id));
+            if (cartItem) {
+              if (cartItem.quantity !== quantity) {
+                dispatch(removeFromCart({ id: cartItem.id, options: cartItem.options }));
+                dispatch(addToCart({
+                  id: cartItem.id,
+                  name: cartItem.name,
+                  image: cartItem.image,
+                  options: cartItem.options,
+                  basePrice: cartItem.price,
+                  specialPrice: cartItem.special,
+                  quantityToAdd: Number(quantity)
+                }));
+              }
+            }
+          });
+        }
+      }
+    } catch (error) {
+      console.error('sync cart error', error);
+    }
   };
 
-  const handleDecrement = (id: string, options: CartItemOption[]) => {
-    dispatch(decrementQuantity({ id, options }));
-  };
+  useFocusEffect(
+    React.useCallback(() => {
+      setIsLoading(true);
+      prepareCheckoutSession();
 
-  const handleCheckout = async () => {
+      return () => {
+        setSessionId(null);
+        syncCartWithServer();
+      };
+    }, [cartItems])
+  );
+
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <Text style={styles.headerTitle}>Shopping Cart</Text>
+      <View style={{ width: 24 }} />
+    </View>
+  );
+
+  const prepareCheckoutSession = async () => {
+    if (cartItems.length === 0) {
+      setIsLoading(false);
+      return;
+    }
+
     try {
       // Check if there's an existing session_id
       const existingSessionId = await AsyncStorage.getItem('checkout_session_id');
@@ -95,251 +162,156 @@ const CartScreen = () => {
       const res = await resp.json();
 
       if (res && res.success && res.session_id) {
-        // Save session_id to AsyncStorage
+        // Save session_id to AsyncStorage and state
         await AsyncStorage.setItem('checkout_session_id', res.session_id);
-        navigation.navigate('CheckoutWebView' as any, { sessionId: res.session_id });
+        setSessionId(res.session_id);
       } else {
         console.warn('Failed to prepare session', res);
       }
     } catch (error) {
       console.error('checkout error', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const handleNavigationStateChange = (navState: WebViewNavigation) => {
+    if (navState.url.includes('success') || navState.url.includes('checkout/success')) {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'OrderSuccess' }],
+      });
+    }
+  };
+
+  const injectedJavaScript = `
+    (function() {
+      function applyCustomizations() {
+        if (typeof window.jQuery === 'undefined') return;
+        
+        $("#top, header, #menu, .breadcrumb, footer").hide();
+
+        if (!document.getElementById('customStyle')) {
+          $('<style id="customStyle">')
+            .prop('type', 'text/css')
+            .html('button:not(.btn-close):not(.accordion-button) { background-color: #FF6B3E !important; border-color: #FF6B3E !important; color: white !important; }')
+            .appendTo('head');
+        }
+
+        $("#content").css({
+          "padding-bottom": "0px",
+          "padding": "20px"
+        }).find("h1").hide();
+
+        $("a.btn:contains('Continue Shopping')").hide();
+        $("a.btn-primary:contains('Checkout')").css({
+          "background-color": "#FF6B3E",
+          "border-color": "#FF6B3E",
+          "color": "white"
+        });
+      }
+
+      // Run once immediately
+      function init() {
+        if (window.jQuery) {
+          applyCustomizations();
+        } else {
+          var script = document.createElement('script');
+          script.src = 'https://code.jquery.com/jquery-3.6.0.min.js';
+          script.onload = applyCustomizations;
+          document.head.appendChild(script);
+        }
+      }
+
+      init();
+
+      // Watch for AJAX or DOM changes and reapply styles
+      const observer = new MutationObserver(() => {
+        applyCustomizations();
+      });
+
+      observer.observe(document.body, { childList: true, subtree: true });
+
+      true; // required for iOS
+    })();
+    `;
+
+
   return (
     <SafeScreen>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Shopping Cart</Text>
-        <View style={{ width: 24 }} />
-      </View>
-
+      {renderHeader()}
       {cartItems.length === 0 ? (
         <View style={styles.emptyCartContainer}>
           <Text style={styles.emptyCartText}>Your cart is empty</Text>
         </View>
       ) : (
-        <>
-          <ScrollView style={styles.content}>
-            {/* Cart Items */}
-            <View style={styles.cartItems}>
-              {cartItems.map((item) => {
-                const optionsKey = item.options.map(o => `${o.optionId}_${o.optionValue}`).join('-') || '';
-                const key = `${item.id}-${optionsKey}`;
-
-                return (
-                  <View key={key} style={styles.cartItem}>
-                    <Image source={{ uri: item.image }} style={styles.itemImage} />
-                    <View style={styles.itemInfo}>
-                      <Text style={styles.itemName} numberOfLines={2}>
-                        {item.name}
-                      </Text>
-                      {item.options.length > 0 && (
-                        <View>
-                          {item.options.map((option, optionIndex) => (
-                            <Text key={`${option.optionId}-${option.optionValue}-${optionIndex}`} style={styles.itemOption}>{option.optionName}: {option.optionValue}</Text>
-                          ))}
-                        </View>
-                      )}
-                      <View style={styles.priceRow}>
-                        {item.special ? (
-                          <>
-                            <Text style={styles.itemSpecialPrice}>${item.special.toFixed(2)}</Text>
-                            <Text style={styles.itemOldPrice}>${item.price.toFixed(2)}</Text>
-                          </>
-                        ) : (
-                          <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
-                        )}
-                      </View>
-                    </View>
-                    <View style={styles.quantityControls}>
-                      <TouchableOpacity style={styles.quantityButton} onPress={() => handleDecrement(item.id, item.options)}>
-                        <Ionicons name="remove" size={20} color="#666" />
-                      </TouchableOpacity>
-                      <Text style={styles.quantity}>{item.quantity}</Text>
-                      <TouchableOpacity style={styles.quantityButton} onPress={() => handleIncrement(item.id, item.options)}>
-                        <Ionicons name="add" size={20} color="#666" />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                );
-              })}
+        <View style={{ flex: 1 }}>
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#FF6B3E" />
             </View>
-
-            {/* Summary */}
-            <View style={styles.summary}>
-              <Text style={styles.summaryTitle}>Order Summary</Text>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Subtotal</Text>
-                <Text style={styles.summaryValue}>${subtotal.toFixed(2)}</Text>
-              </View>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Shipping</Text>
-                <Text style={styles.summaryValue}>${shipping.toFixed(2)}</Text>
-              </View>
-              <View style={[styles.summaryRow, styles.totalRow]}>
-                <Text style={styles.totalLabel}>Total</Text>
-                <Text style={styles.totalValue}>${total.toFixed(2)}</Text>
-              </View>
+          ) : sessionId ? (
+            <WebView
+              source={{
+                uri: 'https://opencartmobileapp.iextendlabs.com/index.php?route=checkout/cart',
+                headers: {
+                  Cookie: `OCSESSID=${sessionId}`
+                }
+              }}
+              style={{ flex: 1 }}
+              onNavigationStateChange={handleNavigationStateChange}
+              injectedJavaScript={injectedJavaScript}
+              javaScriptEnabled={true}
+              domStorageEnabled={true}
+              renderLoading={() => <ActivityIndicator style={styles.loader} size="large" />}
+            />
+          ) : (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>Failed to load cart. Please try again.</Text>
             </View>
-          </ScrollView>
-
-          {/* Checkout Button */}
-          <View style={styles.bottomBar}>
-            <TouchableOpacity style={styles.checkoutButton} onPress={handleCheckout}>
-              <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
-            </TouchableOpacity>
-          </View>
-        </>
+          )}
+        </View>
       )}
     </SafeScreen>
   );
 };
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#FF6B3E',
+    textAlign: 'center',
+  },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
+    backgroundColor: '#fff',
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#000',
-  },
-  content: {
     flex: 1,
+    textAlign: 'center',
   },
-  cartItems: {
-    padding: 16,
-  },
-  cartItem: {
-    flexDirection: 'row',
-    marginBottom: 20,
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    padding: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-  },
-  itemImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-  },
-  itemInfo: {
-    flex: 1,
-    marginLeft: 12,
-    justifyContent: 'space-between',
-  },
-  itemName: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  itemSize: {
-    fontSize: 14,
-    color: '#666',
-  },
-  itemOption: {
-    fontSize: 12,
-    color: '#666',
-  },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  itemSpecialPrice: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FF6B3E',
+  backButton: {
+    padding: 8,
     marginRight: 8,
-  },
-  itemOldPrice: {
-    fontSize: 12,
-    color: '#999',
-    textDecorationLine: 'line-through',
-  },
-  itemPrice: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FF6B3E',
-  },
-  quantityControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 12,
-  },
-  quantityButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#F5F5F5',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  quantity: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginHorizontal: 12,
-  },
-  summary: {
-    padding: 16,
-    backgroundColor: '#F9F9F9',
-    borderRadius: 12,
-    margin: 16,
-  },
-  summaryTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 16,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  summaryLabel: {
-    fontSize: 14,
-    color: '#666',
-  },
-  summaryValue: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  totalRow: {
-    marginTop: 8,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#EEE',
-  },
-  totalLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  totalValue: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#FF6B3E',
-  },
-  bottomBar: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#EEE',
-  },
-  checkoutButton: {
-    backgroundColor: '#FF6B3E',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-  },
-  checkoutButtonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '600',
   },
   emptyCartContainer: {
     flex: 1,
@@ -349,6 +321,9 @@ const styles = StyleSheet.create({
   emptyCartText: {
     fontSize: 18,
     color: '#666',
+  },
+  loader: {
+    flex: 1
   },
 });
 
