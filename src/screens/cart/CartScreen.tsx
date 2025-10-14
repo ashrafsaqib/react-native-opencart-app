@@ -24,6 +24,7 @@ type RootStackParamList = {
   Wishlist: undefined;
   CheckoutWebView: { sessionId: string; url?: string };
   OrderSuccess: undefined;
+  CartScreen: undefined;
 };
 
 const CartScreen = () => {
@@ -186,56 +187,60 @@ const CartScreen = () => {
   };
 
   const injectedJavaScript = `
-    (function() {
-      function applyCustomizations() {
-        if (typeof window.jQuery === 'undefined') return;
-        
-        $("#top, header, #menu, .breadcrumb, footer").hide();
+  (function() {
+    function applyCustomizations() {
+      if (typeof window.jQuery === 'undefined') return;
 
-        if (!document.getElementById('customStyle')) {
-          $('<style id="customStyle">')
-            .prop('type', 'text/css')
-            .html('button:not(.btn-close):not(.accordion-button) { background-color: #FF6B3E !important; border-color: #FF6B3E !important; color: white !important; }')
-            .appendTo('head');
-        }
+      $("#top, header, #menu, .breadcrumb, footer").hide();
 
-        $("#content").css({
-          "padding-bottom": "0px",
-          "padding": "20px"
-        }).find("h1").hide();
-
-        $("a.btn:contains('Continue Shopping')").hide();
-        $("a.btn-primary:contains('Checkout')").css({
-          "background-color": "#FF6B3E",
-          "border-color": "#FF6B3E",
-          "color": "white"
-        });
+      if (!document.getElementById('customStyle')) {
+        $('<style id="customStyle">')
+          .prop('type', 'text/css')
+          .html('button:not(.btn-close):not(.accordion-button) { background-color: #FF6B3E !important; border-color: #FF6B3E !important; color: white !important; }')
+          .appendTo('head');
       }
 
-      // Run once immediately
-      function init() {
-        if (window.jQuery) {
-          applyCustomizations();
-        } else {
-          var script = document.createElement('script');
-          script.src = 'https://code.jquery.com/jquery-3.6.0.min.js';
-          script.onload = applyCustomizations;
-          document.head.appendChild(script);
-        }
-      }
+      $("#content").css({
+        "padding-bottom": "0px",
+        "padding": "20px"
+      }).find("h1").hide();
 
-      init();
-
-      // Watch for AJAX or DOM changes and reapply styles
-      const observer = new MutationObserver(() => {
-        applyCustomizations();
+      $("a.btn:contains('Continue Shopping')").hide();
+      $("a.btn-primary:contains('Checkout')").css({
+        "background-color": "#FF6B3E",
+        "border-color": "#FF6B3E",
+        "color": "white"
       });
 
-      observer.observe(document.body, { childList: true, subtree: true });
+      // Detect empty cart
+      if ($("#content").text().includes("Your shopping cart is empty")) {
+        window.ReactNativeWebView.postMessage("cart_empty");
+      }
+    }
 
-      true; // required for iOS
-    })();
-    `;
+    function init() {
+      if (window.jQuery) {
+        applyCustomizations();
+      } else {
+        var script = document.createElement('script');
+        script.src = 'https://code.jquery.com/jquery-3.6.0.min.js';
+        script.onload = applyCustomizations;
+        document.head.appendChild(script);
+      }
+    }
+
+    init();
+
+    const observer = new MutationObserver(() => {
+      applyCustomizations();
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    true; // required for iOS
+  })();
+`;
+
 
 
   return (
@@ -265,6 +270,25 @@ const CartScreen = () => {
               javaScriptEnabled={true}
               domStorageEnabled={true}
               renderLoading={() => <ActivityIndicator style={styles.loader} size="large" />}
+              onMessage={async (event) => {
+                const message = event.nativeEvent.data;
+
+                if (message === 'cart_empty') {
+                  console.log('🛒 Cart is empty, syncing with server...');
+                  try {
+                    await syncCartWithServer();
+                    console.log('✅ Cart sync completed');
+                  } catch (error) {
+                    console.error('❌ Sync failed', error);
+                  }
+
+                  // Clear cart items and refresh the current screen
+                  cartItems.forEach(item => {
+                    dispatch(removeFromCart({ id: item.id, options: item.options }));
+                  });
+                  setIsLoading(false);
+                }
+              }}
             />
           ) : (
             <View style={styles.errorContainer}>
