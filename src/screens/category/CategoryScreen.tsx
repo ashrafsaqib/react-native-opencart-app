@@ -23,6 +23,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../App';
 import { BASE_URL } from '../../../config';
 import { CategoryStackParamList } from '../../navigation/CategoryStack';
+import { fetchWithCurrency } from '../../utils/api';
 
 type CategoryScreenNavigationProp = CompositeNavigationProp<
   NativeStackNavigationProp<CategoryStackParamList, 'Category'>,
@@ -133,7 +134,7 @@ const CategoryScreen = () => {
         url = `${BASE_URL}.getCategories`;
       }
 
-      const res = await fetch(url);
+      const res = await fetchWithCurrency(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
 
@@ -166,7 +167,7 @@ const CategoryScreen = () => {
       setError(null);
       setIsSearchActive(true);
 
-      const res = await fetch(`${BASE_URL}.searchProducts&name=${query}`);
+      const res = await fetchWithCurrency(`${BASE_URL}.searchProducts&name=${query}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
 

@@ -82,9 +82,9 @@ const ProfileScreen = () => {
   const menuItems = [
     { icon: 'person-outline', title: 'Edit Profile', action: () => handleMenuPress('EditProfile') },
     { icon: 'location-outline', title: 'Shipping Address', action: () => handleMenuPress('ShippingAddress') },
-    { icon: 'card-outline', title: 'Payment Methods', action: () => handleMenuPress('PaymentMethods') },
+    // { icon: 'card-outline', title: 'Payment Methods', action: () => handleMenuPress('PaymentMethods') },
     { icon: 'time-outline', title: 'Order History', action: () => handleMenuPress('OrderHistory') },
-    { icon: 'notifications-outline', title: 'Notifications', action: () => handleMenuPress('Notifications') },
+    // { icon: 'notifications-outline', title: 'Notifications', action: () => handleMenuPress('Notifications') },
     { icon: 'settings-outline', title: 'Settings', action: () => handleMenuPress('Settings') },
     { icon: 'help-circle-outline', title: 'Help Center', action: () => handleMenuPress('HelpCenter') },
     { icon: 'log-out-outline', title: 'Logout', action: handleLogout },

@@ -13,8 +13,7 @@ import { RootState } from '../redux/store';
 const Tab = createBottomTabNavigator();
 
 const BottomTabs = () => {
-  const wishlistItems = useSelector((state: RootState) => state.wishlist.items);
-  const wishlistCount = wishlistItems.length;
+  const wishlistCount = useSelector((state: RootState) => state.wishlist.total);
   const cartItems = useSelector((state: RootState) => state.cart.items);
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
 

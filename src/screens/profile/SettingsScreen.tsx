@@ -1,11 +1,56 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList, ActivityIndicator } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import SafeScreen from '../../components/SafeScreen';
+import { BASE_URL } from '../../../config';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SettingsScreen = () => {
   const navigation: any = useNavigation();
+  const [modalVisible, setModalVisible] = useState(false);
+  const [currencies, setCurrencies] = useState([]);
+  const [selectedCurrency, setSelectedCurrency] = useState('USD');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchCurrencies = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${BASE_URL}.getCurrencies`);
+        const data = await response.json();
+        setCurrencies(data.currencies);
+      } catch (error) {
+        console.error('Failed to fetch currencies:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const loadSelectedCurrency = async () => {
+      try {
+        const currency = await AsyncStorage.getItem('selectedCurrency');
+        if (currency) {
+          setSelectedCurrency(currency);
+        }
+      } catch (error) {
+        console.error('Failed to load currency from storage:', error);
+      }
+    };
+
+    fetchCurrencies();
+    loadSelectedCurrency();
+  }, []);
+
+  const handleSelectCurrency = async (currency: string) => {
+    setSelectedCurrency(currency);
+    setModalVisible(false);
+    try {
+      await AsyncStorage.setItem('selectedCurrency', currency);
+    } catch (error) {
+      console.error('Failed to save currency to storage:', error);
+    }
+  };
 
   return (
     <SafeScreen>
@@ -14,7 +59,7 @@ const SettingsScreen = () => {
           <Ionicons name="chevron-back" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Settings</Text>
-        <View style={{ width: 24 }} />
+        <View style={styles.headerRight} />
       </View>
       <View style={styles.content}>
         <TouchableOpacity style={styles.settingContainer}>
@@ -31,10 +76,10 @@ const SettingsScreen = () => {
             <Ionicons name="chevron-forward" size={24} color="#999" />
           </View>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.settingContainer}>
+        <TouchableOpacity style={styles.settingContainer} onPress={() => setModalVisible(true)}>
           <Text style={styles.settingLabel}>Currency</Text>
           <View style={styles.settingValueContainer}>
-            <Text style={styles.settingValue}>USD</Text>
+            <Text style={styles.settingValue}>{selectedCurrency}</Text>
             <Ionicons name="chevron-forward" size={24} color="#999" />
           </View>
         </TouchableOpacity>
@@ -46,6 +91,36 @@ const SettingsScreen = () => {
           <Ionicons name="chevron-forward" size={24} color="#999" />
         </TouchableOpacity>
       </View>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            {loading ? (
+              <ActivityIndicator size="large" color="#000" />
+            ) : (
+              <FlatList
+                data={currencies}
+                keyExtractor={(item) => item}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.currencyItem}
+                    onPress={() => handleSelectCurrency(item)}
+                  >
+                    <Text style={styles.currencyText}>{item}</Text>
+                    {selectedCurrency === item && (
+                      <Ionicons name="checkmark" size={24} color="green" />
+                    )}
+                  </TouchableOpacity>
+                )}
+              />
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeScreen>
   );
 };
@@ -63,6 +138,9 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#000',
+  },
+  headerRight: {
+    width: 24,
   },
   content: {
     flex: 1,
@@ -89,6 +167,30 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#999',
     marginRight: 8,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 20,
+    width: '80%',
+    maxHeight: '60%',
+  },
+  currencyItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  currencyText: {
+    fontSize: 16,
   },
 });
 

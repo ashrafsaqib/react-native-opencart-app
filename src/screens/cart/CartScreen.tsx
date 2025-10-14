@@ -16,6 +16,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { removeFromCart, addToCart } from '../../redux/slices/cartSlice';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { fetchWithCurrency } from '../../utils/api';
 
 type RootStackParamList = {
   MainTabs: undefined;
@@ -38,7 +39,7 @@ const CartScreen = () => {
       if (!savedSessionId) return;
 
       const url = `${BASE_URL}.syncCart`;
-      const resp = await fetch(url, {
+      const resp = await fetchWithCurrency(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ session_id: savedSessionId }),
@@ -154,7 +155,7 @@ const CartScreen = () => {
       }
 
       const url = `${BASE_URL}.prepareCheckoutSession`;
-      const resp = await fetch(url, {
+      const resp = await fetchWithCurrency(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

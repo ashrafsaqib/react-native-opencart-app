@@ -20,6 +20,7 @@ import FeatureCategories from '../../components/FeatureCategories';
 import { BASE_URL } from '../../../config';
 import { useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { fetchWithCurrency } from '../../utils/api';
 
 // This should be in a central types file, but for this example, defined here.
 export type BottomTabsParamList = {
@@ -40,7 +41,7 @@ const HomeScreen = () => {
   const fetchHomeData = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${BASE_URL}.getHomePageData`);
+      const res = await fetchWithCurrency(`${BASE_URL}.getHomePageData`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       setData(json);

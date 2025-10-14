@@ -24,6 +24,7 @@ import { useDispatch } from 'react-redux';
 import { addToCart, CartItemOption } from '../../redux/slices/cartSlice';
 import Toast from 'react-native-toast-message';
 import { BASE_URL } from '../../../config';
+import { fetchWithCurrency } from '../../utils/api';
 
 type RootStackParamList = {
   Home: undefined;
@@ -166,7 +167,7 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ navigation }) => {
       try {
         setLoading(true);
         const url = `${BASE_URL}.getProductDetail&product_id=${product_id}`;
-        const res = await fetch(url);
+        const res = await fetchWithCurrency(url);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         const normalizedProduct = {
