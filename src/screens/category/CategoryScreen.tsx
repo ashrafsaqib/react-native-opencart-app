@@ -66,6 +66,7 @@ const CategoryScreen = () => {
   const [searchedProducts, setSearchedProducts] = useState<Product[]>([]);
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
 
   const parsePrice = (priceString: string): number => {
     return parseFloat(priceString.replace(/[^0-9.-]+/g, ''));
@@ -172,6 +173,14 @@ const CategoryScreen = () => {
       const json = await res.json();
 
       setSearchedProducts(json.products || []);
+
+      if (!json.products || json.products.length === 0) {
+        const catRes = await fetchWithCurrency(`${BASE_URL}.getCategories`);
+        if (catRes.ok) {
+          const catJson = await catRes.json();
+          setAllCategories(catJson.categories || []);
+        }
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to fetch search data');
     } finally {
@@ -383,16 +392,19 @@ const CategoryScreen = () => {
             showsVerticalScrollIndicator={false}
           />
         ) : (
-          <View style={styles.centered}>
-            <Text>No related product found.</Text>
-            <Text style={styles.categoryTitle}>All Categories</Text>
+          <View>
+            <View style={{ alignItems: 'center', marginVertical: 20 }}>
+              <Text>No related product found.</Text>
+              <Text style={styles.categoryTitle}>All Categories</Text>
+            </View>
             <FlatList
-              data={categories}
+              data={allCategories}
               renderItem={renderCategory}
               keyExtractor={(item) => item.id}
               numColumns={3}
               columnWrapperStyle={{ justifyContent: 'space-between' }}
               contentContainerStyle={styles.categoryList}
+              showsVerticalScrollIndicator={false}
             />
           </View>
         )
