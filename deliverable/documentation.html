@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React Native OpenCart App Documentation</title>
+    <!-- Load Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9; /* Light Slate */
+        }
+        .container-doc {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border-radius: 12px;
+            padding: 3rem;
+        }
+        .header-alt {
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 0.5rem;
+            margin-bottom: 2rem;
+        }
+        .section-heading {
+            border-left: 4px solid #6366f1; /* Indigo 500 */
+            padding-left: 1rem;
+            margin-top: 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .code-block {
+            background-color: #1e293b; /* Slate 800 */
+            color: #f1f5f9; /* Slate 100 */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-family: 'Menlo', 'Monaco', 'Consolas', monospace;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+        .divider {
+            margin: 2rem 0;
+            border: 0;
+            border-top: 1px solid #e2e8f0;
+        }
+        /* Style for the list inside the TOC */
+        .toc-list {
+            list-style-type: decimal;
+            margin-left: 1.5rem;
+            color: #475569; /* Slate 600 */
+        }
+        .toc-list li {
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+
+<body class="p-4 sm:p-8">
+	<div class="container-doc">
+	
+		<h3 class="text-xl text-center font-bold text-gray-500 header-alt">
+            &ldquo;React Native OpenCart App&rdquo; Documentation by &ldquo;Your Name&rdquo; v1.0
+        </h3>
+		
+		<hr class="divider">
+		
+		<h1 class="text-4xl font-extrabold text-center text-indigo-700 mb-6">&ldquo;OpenCart Mobile App&rdquo;</h1>
+		
+        <!-- Author/Metadata Box -->
+		<div class="border-t border-b border-gray-200 py-4 grid sm:grid-cols-3 gap-4 text-sm text-gray-600">
+			<div class="col-span-1 border-r border-gray-200 pr-4 sm:border-r-0">
+				<p class="font-semibold text-gray-800">
+					Created: 10/2025<br>
+					By: Your Name<br>
+					Email: <a href="mailto:youremail@yourdomain.com" class="text-indigo-600 hover:text-indigo-500">youremail@yourdomain.com</a>
+				</p>
+			</div>
+	
+			<div class="col-span-2">
+				<p class="text-base pt-1">Thank you for purchasing this application. If you have any questions that are beyond the scope of this documentation, please feel free to reach out via the user page contact form. Thank you!</p>
+			</div>
+		</div>
+		
+		<hr class="divider">
+		
+		<h2 id="toc" class="text-2xl font-bold text-gray-800 mb-6">Table of Contents</h2>
+		<ol class="toc-list">
+			<li><a href="#overview" class="text-indigo-600 hover:text-indigo-500">Project Overview</a></li>
+			<li><a href="#features" class="text-indigo-600 hover:text-indigo-500">Features</a></li>
+			<li><a href="#techstack" class="text-indigo-600 hover:text-indigo-500">Tech Stack</a></li>
+			<li><a href="#prerequisites" class="text-indigo-600 hover:text-indigo-500">Prerequisites</a></li>
+			<li><a href="#setup" class="text-indigo-600 hover:text-indigo-500">Setup: Installation & Configuration</a></li>
+			<li><a href="#runningapp" class="text-indigo-600 hover:text-indigo-500">Running the App</a></li>
+			<li><a href="#buildandroid" class="text-indigo-600 hover:text-indigo-500">Building the App for Android</a></li>
+			<li><a href="#buildios" class="text-indigo-600 hover:text-indigo-500">Building the App for iOS</a></li>
+			<li><a href="#changeicon" class="text-indigo-600 hover:text-indigo-500">Changing the App Icon</a></li>
+			<li><a href="#changepackage" class="text-indigo-600 hover:text-indigo-500">Changing the Package Name</a></li>
+            <li><a href="#plugininstall" class="text-indigo-600 hover:text-indigo-500">OpenCart Plugin Installation</a></li>
+		</ol>
+		
+		<hr class="divider">
+		
+		<!-- 1. Project Overview -->
+		<h3 id="overview" class="text-2xl font-bold section-heading text-gray-800">
+            1) Project Overview - <a href="#toc" class="text-sm text-indigo-500 hover:text-indigo-400">top</a>
+        </h3>
+		<p class="text-base">
+			This is a <strong>React Native</strong>-based mobile application that serves as a front-end for an <strong>OpenCart e-commerce website</strong>. The app connects to your OpenCart store using a custom plugin, allowing you to offer a seamless mobile shopping experience to your customers. It is designed to be easily customizable and can be adapted to match your brand's identity.
+		</p>
+
+		<!-- 2. Features -->
+        <h3 id="features" class="text-2xl font-bold section-heading text-gray-800">
+            2) Features - <a href="#toc" class="text-sm text-indigo-500 hover:text-indigo-400">top</a>
+        </h3>
+        <ul class="list-disc ml-6 space-y-2 text-base">
+            <li><strong>Home Page:</strong> A dynamic home page with a carousel, featured categories, deals, and new products.</li>
+            <li><strong>Product Catalog:</strong> Browse products by category, search for products, and view product details.</li>
+            <li><strong>Product Options:</strong> Support for OpenCart's product options.</li>
+            <li><strong>Shopping Cart:</strong> A fully functional shopping cart that is synced with the OpenCart store.</li>
+            <li><strong>Wishlist:</strong> Users can add products to their wishlist.</li>
+            <li><strong>User Authentication:</strong> Users can register, log in, and manage their accounts.</li>
+            <li><strong>Order History:</strong> Users can view their order history and order details.</li>
+            <li><strong>Checkout:</strong> A seamless checkout process that is handled by a <strong class="text-indigo-600">webview</strong> to your OpenCart checkout page.</li>
+            <li><strong>Social Feed:</strong> Display your social media feed within the app.</li>
+            <li><strong>Push Notifications:</strong> <span class="text-red-500">(Setup required)</span> Engage with your customers using push notifications.</li>
+        </ul>
+
+		<!-- 3. Tech Stack -->
+        <h3 id="techstack" class="text-2xl font-bold section-heading text-gray-800">
+            3) Tech Stack - <a href="#toc" class="text-sm text-indigo-500 hover:text-indigo-400">top</a>
+        </h3>
+        <ul class="list-disc ml-6 space-y-2 text-base">
+            <li><strong>React Native:</strong> A framework for building native apps using React.</li>
+            <li><strong>Redux Toolkit:</strong> For state management.</li>
+            <li><strong>React Navigation:</strong> For navigation between screens.</li>
+            <li><strong>TypeScript:</strong> For type-safe code.</li>
+            <li><strong>OpenCart:</strong> The e-commerce platform that the app connects to.</li>
+        </ul>
+
+		<!-- 4. Prerequisites -->
+        <h3 id="prerequisites" class="text-2xl font-bold section-heading text-gray-800">
+            4) Prerequisites - <a href="#toc" class="text-sm text-indigo-500 hover:text-indigo-400">top</a>
+        </h3>
+        <p class="mb-3">Before you begin, ensure you have the following installed:</p>
+        <ul class="list-disc ml-6 space-y-2 text-base font-medium">
+            <li><strong>Node.js:</strong> Version 18 or higher.</li>
+            <li><strong>npm:</strong> Version 7 or higher.</li>
+            <li><strong>React Native CLI:</strong> The command-line interface for React Native.</li>
+            <li><strong>Android Studio:</strong> For building the Android app.</li>
+            <li><strong>Xcode:</strong> For building the iOS app.</li>
+            <li><strong>CocoaPods:</strong> For managing iOS dependencies.</li>
+        </ul>
+
+		<!-- 5. Setup: Installation & Configuration -->
+        <h3 id="setup" class="text-2xl font-bold section-heading text-gray-800">
+            5) Setup: Installation & Configuration - <a href="#toc" class="text-sm text-indigo-500 hover:text-indigo-400">top</a>
+        </h3>
+        <p class="text-base mb-3">Follow these steps to install dependencies and configure the API endpoint:</p>
+        <ol class="list-decimal ml-6 space-y-4 text-base">
+            <li><strong>Navigate to the project directory:</strong>
+                <div class="code-block">cd react-native-opencart-app</div>
+            </li>
+            <li><strong>Install the dependencies:</strong>
+                <div class="code-block">npm install</div>
+            </li>
+            <li><strong>Install iOS dependencies:</strong>
+                <div class="code-block">cd ios &amp;&amp; pod install &amp;&amp; cd ..</div>
+            </li>
+            <li><strong>Configure the API endpoint:</strong>
+                <p class="mt-2">Open the <code>src/utils/api.ts</code> file and change the <code>API_BASE_URL</code> to your OpenCart store's URL.</p>
+            </li>
+        </ol>
+		
+        <!-- 6. Running the App -->
+        <h3 id="runningapp" class="text-2xl font-bold section-heading text-gray-800">
+            6) Running the App - <a href="#toc" class="text-sm text-indigo-500 hover:text-indigo-400">top</a>
+        </h3>
+        <p class="text-base mb-3">Ensure your emulator or device is running before executing these commands.</p>
+
+        <h4 class="text-xl font-semibold mb-2 mt-4 text-indigo-600">Start the Metro bundler</h4>
+        <div class="code-block">npx react-native start</div>
+
+        <h4 class="text-xl font-semibold mb-2 mt-4 text-indigo-600">Run on Android</h4>
+        <div class="code-block">npx react-native run-android</div>
+
+        <h4 class="text-xl font-semibold mb-2 mt-4 text-indigo-600">Run on iOS</h4>
+        <div class="code-block">npx react-native run-ios</div>
+		
+        <!-- 7. Building the App for Android -->
+        <h3 id="buildandroid" class="text-2xl font-bold section-heading text-gray-800">
+            7) Building the App for Android - <a href="#toc" class="text-sm text-indigo-500 hover:text-indigo-400">top</a>
+        </h3>
+        <ol class="list-decimal ml-6 space-y-4 text-base">
+            <li><strong>Generate a signing key:</strong>
+                <div class="code-block">keytool -genkey -v -keystore my-release-key.keystore -alias my-key-alias -keyalg RSA -keysize 2048 -validity 10000</div>
+            </li>
+            <li><strong>Place the <code>my-release-key.keystore</code> file in the <code>android/app</code> directory.</strong></li>
+            <li><strong>Edit the <code>~/.gradle/gradle.properties</code> file and add the following:</strong>
+                <div class="code-block">
+                    MYAPP_RELEASE_STORE_FILE=my-release-key.keystore<br>
+                    MYAPP_RELEASE_KEY_ALIAS=my-key-alias<br>
+                    MYAPP_RELEASE_STORE_PASSWORD=your-store-password<br>
+                    MYAPP_RELEASE_KEY_PASSWORD=your-key-password
+                </div>
+            </li>
+            <li><strong>Navigate to the <code>android</code> directory and run the following command:</strong>
+                <div class="code-block">./gradlew assembleRelease</div>
+                <p class="mt-2">The generated APK will be located at <code>android/app/build/outputs/apk/release/app-release.apk</code>.</p>
+            </li>
+        </ol>
+		
+        <!-- 8. Building the App for iOS -->
+        <h3 id="buildios" class="text-2xl font-bold section-heading text-gray-800">
+            8) Building the App for iOS - <a href="#toc" class="text-sm text-indigo-500 hover:text-indigo-400">top</a>
+        </h3>
+        <ol class="list-decimal ml-6 space-y-4 text-base">
+            <li><strong>Open the <code>ios/opencartapp.xcworkspace</code> file in Xcode.</strong></li>
+            <li><strong>Select your device or a simulator.</strong></li>
+            <li><strong>Choose <code>Product</code> &gt; <code>Archive</code> from the menu.</strong></li>
+            <li><strong>Once the archive is created, you can distribute the app to the App Store.</strong></li>
+        </ol>
+
+		<!-- 9. Changing the App Icon -->
+        <h3 id="changeicon" class="text-2xl font-bold section-heading text-gray-800">
+            9) Changing the App Icon - <a href="#toc" class="text-sm text-indigo-500 hover:text-indigo-400">top</a>
+        </h3>
+
+        <h4 class="text-xl font-semibold mb-2 mt-4 text-indigo-600">For Android</h4>
+        <ol class="list-decimal ml-6 space-y-4 text-base">
+            <li>Prepare your app icon in various resolutions (e.g., 48x48, 72x72, 96x96, 144x144, 192x192 pixels).</li>
+            <li>Navigate to the <code>android/app/src/main/res</code> directory.</li>
+            <li>Replace the <code>ic_launcher.png</code> and <code>ic_launcher_round.png</code> files in the <code>mipmap-hdpi</code>, <code>mipmap-mdpi</code>, <code>mipmap-xhdpi</code>, <code>mipmap-xxhdpi</code>, and <code>mipmap-xxxhdpi</code> folders with your new icon files.</li>
+            <li>Clean and rebuild your Android project.</li>
+        </ol>
+
+        <h4 class="text-xl font-semibold mb-2 mt-4 text-indigo-600">For iOS</h4>
+        <ol class="list-decimal ml-6 space-y-4 text-base">
+            <li>Prepare your app icon in various resolutions as required by Xcode (e.g., 2x, 3x for iPhone and iPad).</li>
+            <li>Open your project in Xcode (<code>ios/opencartapp.xcworkspace</code>).</li>
+            <li>In the Project Navigator, select <code>opencartapp</code> (your project name) and then select <code>Assets.xcassets</code>.</li>
+            <li>Locate the <code>AppIcon</code> set.</li>
+            <li>Drag and drop your new icon files into the corresponding slots in the <code>AppIcon</code> set.</li>
+            <li>Clean and rebuild your iOS project.</li>
+        </ol>
+
+		<!-- 10. Changing the Package Name -->
+        <h3 id="changepackage" class="text-2xl font-bold section-heading text-gray-800">
+            10) Changing the Package Name - <a href="#toc" class="text-sm text-indigo-500 hover:text-indigo-400">top</a>
+        </h3>
+
+        <h4 class="text-xl font-semibold mb-2 mt-4 text-indigo-600">For Android</h4>
+        <ol class="list-decimal ml-6 space-y-4 text-base">
+            <li>
+                <strong>Change the <code>applicationId</code> in <code>android/app/build.gradle</code>:</strong>
+                <p>Open <code>android/app/build.gradle</code> and locate the <code>defaultConfig</code> block. Change the <code>applicationId</code> to your desired package name.</p>
+                <div class="code-block">
+                    defaultConfig {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;applicationId "com.yourcompany.yourappname" // Change this<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;...<br>
+                    }
+                </div>
+            </li>
+            <li>
+                <strong>Rename folders and update package declarations:</strong>
+                <p>Manually rename the package folders in <code>android/app/src/main/java/com/opencartapp</code> to match your new package name (e.g., <code>com/yourcompany/yourappname</code>).</p>
+                <p>Then, update the <code>package</code> declaration in the following files to reflect the new package structure:</p>
+                <ul class="list-disc ml-6 mt-2 space-y-1">
+                    <li><code>android/app/src/main/java/com/yourcompany/yourappname/MainActivity.kt</code></li>
+                    <li><code>android/app/src/main/java/com/yourcompany/yourappname/MainApplication.kt</code></li>
+                </ul>
+            </li>
+            <li>
+                <strong>Update <code>AndroidManifest.xml</code>:</strong>
+                <p>Open <code>android/app/src/main/AndroidManifest.xml</code> and update the <code>package</code> attribute in the <code>&lt;manifest&gt;</code> tag to your new package name.</p>
+            </li>
+        </ol>
+
+        <h4 class="text-xl font-semibold mb-2 mt-4 text-indigo-600">For iOS</h4>
+        <ol class="list-decimal ml-6 space-y-4 text-base">
+            <li>
+                <strong>Open your project in Xcode:</strong>
+                <p>Open <code>ios/opencartapp.xcworkspace</code> in Xcode.</p>
+            </li>
+            <li>
+                <strong>Change the Bundle Identifier:</strong>
+                <ul class="list-disc ml-6 mt-2 space-y-1">
+                    <li>In the Project Navigator, select your project (e.g., <code>opencartapp</code>).</li>
+                    <li>Select your target (e.g., <code>opencartapp</code>) under <strong>TARGETS</strong>.</li>
+                    <li>Go to the <strong>General</strong> tab.</li>
+                    <li>Under <strong>Identity</strong>, change the <code>Bundle Identifier</code> to your desired package name (e.g., <code>com.yourcompany.yourappname</code>).</li>
+                </ul>
+            </li>
+            <li><strong>Clean and rebuild your iOS project.</strong></li>
+        </ol>
+
+		<!-- 11. OpenCart Plugin Installation -->
+        <h3 id="plugininstall" class="text-2xl font-bold section-heading text-gray-800">
+            11) OpenCart Plugin Installation - <a href="#toc" class="text-sm text-indigo-500 hover:text-indigo-400">top</a>
+        </h3>
+        <p class="text-base mb-3">The <strong>OpenCart plugin is required</strong> for the app to connect to your OpenCart store.</p>
+        <ol class="list-decimal ml-6 space-y-4 text-base">
+            <li><strong>Download the <code>mobile_app.ocmod.zip</code> file from the project's root directory.</strong></li>
+            <li><strong>Log in to your OpenCart admin panel.</strong></li>
+            <li><strong>Navigate to <code>Extensions</code> &gt; <code>Installer</code>.</strong></li>
+            <li><strong>Click the <code>Upload</code> button and select the <code>mobile_app.ocmod.zip</code> file.</strong></li>
+            <li><strong>Navigate to <code>Extensions</code> &gt; <code>Extensions</code> and select <code>Modules</code> from the dropdown.</strong></li>
+            <li><strong>Find the <code>Mobile App</code> module and click the <code>Install</code> button.</strong></li>
+            <li><strong>Once installed, click the <code>Edit</code> button to configure the module.</strong></li>
+            <li><strong>Enable the module and save the changes.</strong></li>
+        </ol>
+
+
+        <!-- Final Footer -->
+        <hr class="divider">
+		
+		<p class="text-lg text-center font-bold text-gray-700 mt-8">
+            Your Name
+        </p>
+		<p class="text-center">
+            <a href="#toc" class="text-indigo-600 hover:text-indigo-500 font-medium">Go To Table of Contents</a>
+        </p>
+		
+		<hr class="divider space">
+	</div>
+
+</body>
+</html>

@@ -61,17 +61,18 @@ Before running the app, you need to configure the API endpoint for your OpenCart
 
 ## 5. Running the App
 
-### For Android
-
-```bash
-npm run android
-```
-
-### For iOS
-
-```bash
-npm run ios
-```
+1.  **Start the Metro bundler:**
+    ```bash
+    npx react-native start
+    ```
+2.  **Run on Android:**
+    ```bash
+    npx react-native run-android
+    ```
+3.  **Run on iOS:**
+    ```bash
+    npx react-native run-ios
+    ```
 
 ## 6. Building the App for Android
 
